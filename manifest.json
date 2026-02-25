@@ -2,7 +2,7 @@
     "name": "FitTrack - Ağırlık & Kalori Takibi",
     "short_name": "FitTrack",
     "description": "Ağırlık ve kalori takip uygulaması",
-    "start_url": "/",
+    "start_url": "./",
     "display": "standalone",
     "background_color": "#0a0e27",
     "theme_color": "#0a0e27",
