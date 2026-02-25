@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FitTrack">
+    <meta name="theme-color" content="#0a0e27">
+    <meta name="description" content="AI destekli spor ve kalori takip uygulaması">
+    <title>FitTrack - Spor & Kalori Takibi</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230a0e27' width='100' height='100' rx='20'/><text y='68' x='50' text-anchor='middle' font-size='50'>🏋️</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div id="app">
+        <!-- ============ DASHBOARD PAGE ============ -->
+        <section id="page-dashboard" class="page active">
+            <header class="page-header">
+                <div class="header-row">
+                    <div>
+                        <h1>FitTrack</h1>
+                        <p class="date-display" id="current-date"></p>
+                    </div>
+                    <button class="hamburger-btn" id="menu-toggle" aria-label="Menü">
+                        <span></span><span></span><span></span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <!-- Summary Cards -->
+                <div class="summary-grid">
+                    <div class="summary-card cal-card">
+                        <div class="card-icon">🔥</div>
+                        <div class="card-info">
+                            <span class="card-value" id="dash-calories">0</span>
+                            <span class="card-label">Bugün Kalori</span>
+                        </div>
+                    </div>
+                    <div class="summary-card remaining-card">
+                        <div class="card-icon">🎯</div>
+                        <div class="card-info">
+                            <span class="card-value" id="dash-remaining">0</span>
+                            <span class="card-label">Kalan Kalori</span>
+                        </div>
+                    </div>
+                    <div class="summary-card weight-card">
+                        <div class="card-icon">🏋️</div>
+                        <div class="card-info">
+                            <span class="card-value" id="dash-workouts">0</span>
+                            <span class="card-label">Bu Hafta Antrenman</span>
+                        </div>
+                    </div>
+                    <div class="summary-card streak-card">
+                        <div class="card-icon">💪</div>
+                        <div class="card-info">
+                            <span class="card-value" id="dash-exercises">0</span>
+                            <span class="card-label">Takip Edilen Hareket</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Macro Summary -->
+                <div class="glass-card">
+                    <h3>Günlük Makro Özeti</h3>
+                    <div class="macro-grid">
+                        <div class="macro-item macro-cal">
+                            <span class="macro-value" id="dash-macro-cal">0</span>
+                            <span class="macro-label">kcal</span>
+                            <div class="macro-bar">
+                                <div class="macro-bar-fill" id="dash-macro-cal-bar"></div>
+                            </div>
+                        </div>
+                        <div class="macro-item macro-protein">
+                            <span class="macro-value" id="dash-macro-protein">0g</span>
+                            <span class="macro-label">Protein</span>
+                            <div class="macro-bar">
+                                <div class="macro-bar-fill" id="dash-macro-protein-bar"></div>
+                            </div>
+                        </div>
+                        <div class="macro-item macro-carbs">
+                            <span class="macro-value" id="dash-macro-carbs">0g</span>
+                            <span class="macro-label">Karb</span>
+                            <div class="macro-bar">
+                                <div class="macro-bar-fill" id="dash-macro-carbs-bar"></div>
+                            </div>
+                        </div>
+                        <div class="macro-item macro-fat">
+                            <span class="macro-value" id="dash-macro-fat">0g</span>
+                            <span class="macro-label">Yağ</span>
+                            <div class="macro-bar">
+                                <div class="macro-bar-fill" id="dash-macro-fat-bar"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calorie Progress Ring -->
+                <div class="glass-card progress-section">
+                    <h3>Günlük Kalori İlerlemesi</h3>
+                    <div class="progress-ring-container">
+                        <svg class="progress-ring" viewBox="0 0 200 200">
+                            <circle class="progress-ring-bg" cx="100" cy="100" r="85" />
+                            <circle class="progress-ring-fill" id="calorie-ring" cx="100" cy="100" r="85" />
+                        </svg>
+                        <div class="progress-ring-text">
+                            <span class="ring-value" id="ring-percent">0%</span>
+                            <span class="ring-label">tamamlandı</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Workouts -->
+                <div class="glass-card">
+                    <h3>Son Antrenmanlar</h3>
+                    <div id="dash-recent-workouts" class="data-list">
+                        <p class="empty-state">Henüz antrenman kaydı yok.</p>
+                    </div>
+                </div>
+
+                <!-- Calorie Chart -->
+                <div class="glass-card chart-section">
+                    <h3>Kalori Trendi (Son 7 Gün)</h3>
+                    <div class="chart-container">
+                        <canvas id="dash-calorie-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- AI Training Recommendations -->
+                <div class="glass-card ai-recommendations-card">
+                    <h3>🤖 AI Antrenman Tavsiyeleri</h3>
+                    <div id="ai-recommendations" class="ai-recommendations">
+                        <p class="empty-state">Programınıza hareket ekleyin ve antrenman kaydedin.</p>
+                    </div>
+                    <button type="button" class="btn-ai btn-refresh-ai" id="btn-refresh-recommendations"
+                        style="margin-top:12px;display:none;">
+                        <span class="ai-shimmer"></span>
+                        <span>🔄 Tavsiyeleri Güncelle</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ EXERCISES PAGE ============ -->
+        <section id="page-exercises" class="page">
+            <header class="page-header">
+                <div class="header-row">
+                    <h1>🏋️ Antrenman Takibi</h1>
+                    <button class="hamburger-btn" aria-label="Menü">
+                        <span></span><span></span><span></span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <!-- Add Workout Entry -->
+                <div class="glass-card input-card">
+                    <h3>Antrenman Kaydı Ekle</h3>
+                    <form id="workout-form" class="input-form">
+                        <div class="input-group">
+                            <label for="exercise-select">Hareket</label>
+                            <select id="exercise-select" required>
+                                <optgroup label="Göğüs">
+                                    <option value="Bench Press">Bench Press</option>
+                                    <option value="Incline Bench Press">Incline Bench Press</option>
+                                    <option value="Decline Bench Press">Decline Bench Press</option>
+                                    <option value="Dumbbell Fly">Dumbbell Fly</option>
+                                    <option value="Cable Crossover">Cable Crossover</option>
+                                    <option value="Chest Press Machine">Chest Press Machine</option>
+                                    <option value="Push Up">Push Up</option>
+                                </optgroup>
+                                <optgroup label="Sırt">
+                                    <option value="Lat Pulldown">Lat Pulldown</option>
+                                    <option value="Barbell Row">Barbell Row</option>
+                                    <option value="Seated Cable Row">Seated Cable Row</option>
+                                    <option value="T-Bar Row">T-Bar Row</option>
+                                    <option value="Dumbbell Row">Dumbbell Row</option>
+                                    <option value="Pull Up">Pull Up</option>
+                                    <option value="Deadlift">Deadlift</option>
+                                    <option value="Face Pull">Face Pull</option>
+                                </optgroup>
+                                <optgroup label="Omuz">
+                                    <option value="Overhead Press">Overhead Press</option>
+                                    <option value="Lateral Raise">Lateral Raise</option>
+                                    <option value="Front Raise">Front Raise</option>
+                                    <option value="Rear Delt Fly">Rear Delt Fly</option>
+                                    <option value="Arnold Press">Arnold Press</option>
+                                    <option value="Shoulder Press Machine">Shoulder Press Machine</option>
+                                </optgroup>
+                                <optgroup label="Bacak">
+                                    <option value="Squat">Squat</option>
+                                    <option value="Leg Press">Leg Press</option>
+                                    <option value="Leg Extension">Leg Extension</option>
+                                    <option value="Leg Curl">Leg Curl</option>
+                                    <option value="Romanian Deadlift">Romanian Deadlift</option>
+                                    <option value="Bulgarian Split Squat">Bulgarian Split Squat</option>
+                                    <option value="Hip Thrust">Hip Thrust</option>
+                                    <option value="Calf Raise">Calf Raise</option>
+                                    <option value="Hack Squat">Hack Squat</option>
+                                </optgroup>
+                                <optgroup label="Kol">
+                                    <option value="Bicep Curl">Bicep Curl</option>
+                                    <option value="Hammer Curl">Hammer Curl</option>
+                                    <option value="Preacher Curl">Preacher Curl</option>
+                                    <option value="Tricep Pushdown">Tricep Pushdown</option>
+                                    <option value="Skull Crusher">Skull Crusher</option>
+                                    <option value="Overhead Tricep Extension">Overhead Tricep Extension</option>
+                                    <option value="Dips">Dips</option>
+                                </optgroup>
+                                <optgroup label="Karın">
+                                    <option value="Crunch">Crunch</option>
+                                    <option value="Plank">Plank</option>
+                                    <option value="Cable Crunch">Cable Crunch</option>
+                                    <option value="Leg Raise">Leg Raise</option>
+                                    <option value="Ab Wheel Rollout">Ab Wheel Rollout</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="form-row form-row-3">
+                            <div class="input-group">
+                                <label for="workout-weight">Ağırlık (kg)</label>
+                                <input type="number" id="workout-weight" step="0.5" min="0" max="999" placeholder="80"
+                                    required>
+                            </div>
+                            <div class="input-group">
+                                <label for="workout-sets">Set</label>
+                                <input type="number" id="workout-sets" min="1" max="20" placeholder="4" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="workout-reps">Tekrar</label>
+                                <input type="number" id="workout-reps" min="1" max="100" placeholder="10" required>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label for="workout-date">Tarih</label>
+                            <input type="date" id="workout-date" required>
+                        </div>
+                        <button type="submit" class="btn-primary">
+                            <span>Kaydet</span>
+                            <span class="btn-icon">+</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Exercise Filter -->
+                <div class="glass-card">
+                    <h3>Hareket Geçmişi</h3>
+                    <div class="input-group" style="margin-bottom:12px">
+                        <label for="history-exercise-filter">Hareket Filtrele</label>
+                        <select id="history-exercise-filter">
+                            <option value="all">Tüm Hareketler</option>
+                        </select>
+                    </div>
+                    <div class="chart-container chart-large" id="exercise-chart-container" style="display:none;">
+                        <canvas id="exercise-chart"></canvas>
+                    </div>
+                    <div id="workout-list" class="data-list">
+                        <p class="empty-state">Henüz antrenman kaydı yok. İlk kaydınızı ekleyin!</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ CALORIE PAGE ============ -->
+        <section id="page-calories" class="page">
+            <header class="page-header">
+                <div class="header-row">
+                    <h1>🍽️ Kalori Takibi</h1>
+                    <button class="hamburger-btn" aria-label="Menü">
+                        <span></span><span></span><span></span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <!-- Daily Macro Summary -->
+                <div class="glass-card daily-summary">
+                    <div class="daily-calories">
+                        <div class="daily-item">
+                            <span class="daily-value" id="cal-eaten">0</span>
+                            <span class="daily-label">Alınan</span>
+                        </div>
+                        <div class="daily-divider"></div>
+                        <div class="daily-item target">
+                            <span class="daily-value" id="cal-target">2000</span>
+                            <span class="daily-label">Hedef</span>
+                        </div>
+                        <div class="daily-divider"></div>
+                        <div class="daily-item remaining">
+                            <span class="daily-value" id="cal-remain">2000</span>
+                            <span class="daily-label">Kalan</span>
+                        </div>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="calorie-progress-bar"></div>
+                    </div>
+                    <!-- Macro bars under calorie bar -->
+                    <div class="macro-summary-row">
+                        <div class="macro-pill protein-pill">
+                            <span>🥩</span>
+                            <span id="cal-page-protein">0g</span>
+                            <span class="macro-pill-label">Protein</span>
+                        </div>
+                        <div class="macro-pill carbs-pill">
+                            <span>🍚</span>
+                            <span id="cal-page-carbs">0g</span>
+                            <span class="macro-pill-label">Karb</span>
+                        </div>
+                        <div class="macro-pill fat-pill">
+                            <span>🧈</span>
+                            <span id="cal-page-fat">0g</span>
+                            <span class="macro-pill-label">Yağ</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add Meal with AI -->
+                <div class="glass-card input-card">
+                    <h3>Yemek Ekle</h3>
+                    <form id="meal-form" class="input-form">
+                        <div class="input-group">
+                            <label for="meal-name">Yemek Adı</label>
+                            <input type="text" id="meal-name" placeholder="ör: baklava, tavuk göğsü, mercimek çorbası"
+                                required>
+                        </div>
+
+                        <!-- Portion Selector -->
+                        <div class="form-row portion-row">
+                            <div class="input-group">
+                                <label for="portion-amount">Miktar</label>
+                                <input type="number" id="portion-amount" min="1" max="9999" step="1" value="1"
+                                    placeholder="1">
+                            </div>
+                            <div class="input-group">
+                                <label for="portion-unit">Birim</label>
+                                <select id="portion-unit">
+                                    <option value="porsiyon">🍽️ Porsiyon</option>
+                                    <option value="gram">⚖️ Gram (g)</option>
+                                    <option value="adet">🔢 Adet</option>
+                                    <option value="dilim">🍕 Dilim</option>
+                                    <option value="kase">🥣 Kase</option>
+                                    <option value="bardak">🥛 Bardak</option>
+                                    <option value="tabak">🍛 Tabak</option>
+                                    <option value="parça">🧩 Parça</option>
+                                    <option value="kaşık">🥄 Kaşık</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- AI Buttons -->
+                        <div class="ai-buttons">
+                            <button type="button" class="btn-ai" id="btn-ai-estimate">
+                                <span class="ai-shimmer"></span>
+                                <span>🤖 AI ile Hesapla</span>
+                            </button>
+                            <label class="btn-ai btn-ai-photo" id="btn-ai-photo-label">
+                                <span class="ai-shimmer"></span>
+                                <span>📸 Fotoğraftan Hesapla</span>
+                                <input type="file" id="photo-input" accept="image/*" capture="environment" hidden>
+                            </label>
+                        </div>
+
+                        <!-- AI Loading -->
+                        <div id="ai-loading" class="ai-loading" style="display:none;">
+                            <div class="ai-spinner"></div>
+                            <span>AI analiz ediyor...</span>
+                        </div>
+
+                        <!-- Photo Preview -->
+                        <div id="photo-preview-container" class="photo-preview-container" style="display:none;">
+                            <img id="photo-preview" class="photo-preview" alt="Fotoğraf">
+                            <button type="button" class="photo-remove" id="btn-remove-photo">✕</button>
+                        </div>
+
+                        <!-- Macro Inputs (2x2 grid) -->
+                        <div class="form-row">
+                            <div class="input-group">
+                                <label for="meal-calories">Kalori (kcal)</label>
+                                <input type="number" id="meal-calories" min="0" max="10000" placeholder="kcal">
+                            </div>
+                            <div class="input-group">
+                                <label for="meal-protein">Protein (g)</label>
+                                <input type="number" id="meal-protein" min="0" max="1000" step="0.1" placeholder="g">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="input-group">
+                                <label for="meal-carbs">Karb (g)</label>
+                                <input type="number" id="meal-carbs" min="0" max="1000" step="0.1" placeholder="g">
+                            </div>
+                            <div class="input-group">
+                                <label for="meal-fat">Yağ (g)</label>
+                                <input type="number" id="meal-fat" min="0" max="1000" step="0.1" placeholder="g">
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="meal-time">Öğün</label>
+                            <select id="meal-time">
+                                <option value="Kahvaltı">🌅 Kahvaltı</option>
+                                <option value="Öğle">☀️ Öğle</option>
+                                <option value="Akşam">🌙 Akşam</option>
+                                <option value="Atıştırmalık">🍿 Atıştırmalık</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn-primary">
+                            <span>Ekle</span>
+                            <span class="btn-icon">+</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Calorie Chart -->
+                <div class="glass-card chart-section">
+                    <h3>Haftalık Kalori Grafiği</h3>
+                    <div class="chart-container chart-large">
+                        <canvas id="calorie-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Today's Meals -->
+                <div class="glass-card">
+                    <div class="list-header">
+                        <h3>Bugünkü Yemekler</h3>
+                    </div>
+                    <div id="meal-list" class="data-list">
+                        <p class="empty-state">Henüz yemek eklenmedi. İlk yemeğinizi ekleyin!</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ PROFILE PAGE ============ -->
+        <section id="page-profile" class="page">
+            <header class="page-header">
+                <div class="header-row">
+                    <h1>👤 Profil & Ayarlar</h1>
+                    <button class="hamburger-btn" aria-label="Menü">
+                        <span></span><span></span><span></span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <!-- API Key -->
+                <div class="glass-card input-card ai-settings-card">
+                    <h3>🤖 AI Ayarları (Gemini)</h3>
+                    <form id="api-key-form" class="input-form">
+                        <div class="input-group">
+                            <label for="gemini-api-key">Gemini API Anahtarı</label>
+                            <input type="password" id="gemini-api-key" placeholder="AI... ile başlayan anahtar">
+                        </div>
+                        <p class="form-hint">
+                            Ücretsiz API anahtarı almak için: <a href="https://aistudio.google.com/apikey"
+                                target="_blank" rel="noopener">aistudio.google.com/apikey</a>
+                        </p>
+                        <button type="submit" class="btn-primary btn-small">
+                            <span>Anahtarı Kaydet</span>
+                            <span class="btn-icon">🔑</span>
+                        </button>
+                    </form>
+                </div>
+
+                <div class="glass-card input-card">
+                    <h3>Kişisel Bilgiler</h3>
+                    <form id="profile-form" class="input-form">
+                        <div class="form-row">
+                            <div class="input-group">
+                                <label for="profile-height">Boy (cm)</label>
+                                <input type="number" id="profile-height" min="100" max="250" placeholder="175">
+                            </div>
+                            <div class="input-group">
+                                <label for="profile-age">Yaş</label>
+                                <input type="number" id="profile-age" min="10" max="120" placeholder="25">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="input-group">
+                                <label for="profile-body-weight">Vücut Ağırlığı (kg)</label>
+                                <input type="number" id="profile-body-weight" step="0.1" min="30" max="300"
+                                    placeholder="75.0">
+                            </div>
+                            <div class="input-group">
+                                <label for="profile-calorie-goal">Günlük Kalori Hedefi</label>
+                                <input type="number" id="profile-calorie-goal" min="500" max="10000" placeholder="2000">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary">
+                            <span>Kaydet</span>
+                            <span class="btn-icon">✓</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Personal Records -->
+                <div class="glass-card">
+                    <h3>🏆 Kişisel Rekorlar (PR)</h3>
+                    <div id="pr-list" class="data-list">
+                        <p class="empty-state">Antrenman kaydı ekledikçe rekorlarınız burada görünecek.</p>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="glass-card stats-card">
+                    <h3>İstatistikler</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-value" id="stat-total-workouts">0</span>
+                            <span class="stat-label">Toplam Antrenman</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="stat-total-meals">0</span>
+                            <span class="stat-label">Toplam Yemek Kaydı</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="stat-unique-exercises">0</span>
+                            <span class="stat-label">Farklı Hareket</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="stat-avg-calories">--</span>
+                            <span class="stat-label">Ort. Günlük Kalori</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Danger Zone -->
+                <div class="glass-card danger-card">
+                    <h3>Veri Yönetimi</h3>
+                    <button class="btn-danger" id="btn-export">
+                        📤 Verileri Dışa Aktar (JSON)
+                    </button>
+                    <button class="btn-danger btn-reset" id="btn-reset">
+                        🗑️ Tüm Verileri Sil
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ PROGRAM PAGE ============ -->
+        <section id="page-program" class="page">
+            <header class="page-header">
+                <div class="header-row">
+                    <h1>📋 Antrenman Programım</h1>
+                    <button class="hamburger-btn" aria-label="Menü">
+                        <span></span><span></span><span></span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <!-- Add Exercise to Program -->
+                <div class="glass-card">
+                    <h3>Programa Hareket Ekle</h3>
+                    <form id="program-exercise-form" class="input-form">
+                        <div class="input-group">
+                            <label for="prog-exercise-name">Hareket Adı</label>
+                            <input type="text" id="prog-exercise-name" placeholder="ör: Bench Press, Squat" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="input-group">
+                                <label for="prog-target-sets">Hedef Set</label>
+                                <input type="number" id="prog-target-sets" min="1" max="20" value="3" placeholder="3">
+                            </div>
+                            <div class="input-group">
+                                <label for="prog-target-reps">Hedef Tekrar</label>
+                                <input type="number" id="prog-target-reps" min="1" max="100" value="10"
+                                    placeholder="10">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary">➕ Programa Ekle</button>
+                    </form>
+                </div>
+
+                <!-- Current Program -->
+                <div class="glass-card">
+                    <h3>Mevcut Program</h3>
+                    <div id="program-list" class="data-list">
+                        <p class="empty-state">Henüz hareket eklenmedi.</p>
+                    </div>
+                </div>
+
+                <!-- Log Workout -->
+                <div class="glass-card">
+                    <h3>Antrenman Kaydet</h3>
+                    <form id="program-log-form" class="input-form">
+                        <div class="input-group">
+                            <label for="log-exercise-select">Hareket</label>
+                            <select id="log-exercise-select">
+                                <option value="">Hareket seçin...</option>
+                            </select>
+                        </div>
+                        <div class="form-row form-row-3">
+                            <div class="input-group">
+                                <label for="log-weight">Ağırlık (kg)</label>
+                                <input type="number" id="log-weight" min="0" max="500" step="0.5" placeholder="kg"
+                                    required>
+                            </div>
+                            <div class="input-group">
+                                <label for="log-sets">Set</label>
+                                <input type="number" id="log-sets" min="1" max="20" value="3" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="log-reps">Tekrar</label>
+                                <input type="number" id="log-reps" min="1" max="100" value="10" required>
+                            </div>
+                        </div>
+                        <div class="input-group rpe-group">
+                            <label for="log-rpe">RPE (Zorluk): <span id="rpe-value" class="rpe-badge">5</span></label>
+                            <input type="range" id="log-rpe" min="1" max="10" value="5" class="rpe-slider">
+                            <div class="rpe-labels">
+                                <span>Kolay</span>
+                                <span>Orta</span>
+                                <span>Limit</span>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary">💾 Kaydı Kaydet</button>
+                    </form>
+                </div>
+
+                <!-- Recent Logs -->
+                <div class="glass-card">
+                    <h3>Son Antrenman Kayıtları</h3>
+                    <div id="program-log-list" class="data-list">
+                        <p class="empty-state">Henüz kayıt yok.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ DRAWER MENU ============ -->
+        <div class="drawer-overlay" id="drawer-overlay"></div>
+        <nav class="drawer-menu" id="drawer-menu">
+            <div class="drawer-header">
+                <h2>FitTrack</h2>
+                <button class="drawer-close" id="drawer-close">✕</button>
+            </div>
+            <div class="drawer-items">
+                <button class="drawer-item active" data-page="dashboard">
+                    <span class="drawer-icon">🏠</span>
+                    <span>Ana Sayfa</span>
+                </button>
+                <button class="drawer-item" data-page="exercises">
+                    <span class="drawer-icon">🏋️</span>
+                    <span>Antrenman</span>
+                </button>
+                <button class="drawer-item" data-page="program">
+                    <span class="drawer-icon">📋</span>
+                    <span>Programım</span>
+                </button>
+                <button class="drawer-item" data-page="calories">
+                    <span class="drawer-icon">🍽️</span>
+                    <span>Kalori Takibi</span>
+                </button>
+                <button class="drawer-item" data-page="profile">
+                    <span class="drawer-icon">👤</span>
+                    <span>Profil & Ayarlar</span>
+                </button>
+            </div>
+            <div class="drawer-footer">
+                <p>FitTrack v1.0</p>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(() => { });
+        }
+    </script>
+</body>
+
+</html>

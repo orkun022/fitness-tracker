@@ -1,0 +1,18 @@
+{
+    "name": "FitTrack - Ağırlık & Kalori Takibi",
+    "short_name": "FitTrack",
+    "description": "Ağırlık ve kalori takip uygulaması",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0a0e27",
+    "theme_color": "#0a0e27",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%230a0e27' width='512' height='512' rx='100'/><text y='340' x='256' text-anchor='middle' font-size='260'>🏋️</text></svg>",
+            "sizes": "512x512",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ]
+}
