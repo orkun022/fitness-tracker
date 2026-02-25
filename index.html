@@ -582,11 +582,18 @@
                     </form>
                 </div>
 
-                <!-- Current Program -->
+                <!-- Program Selector -->
                 <div class="glass-card">
                     <h3>Mevcut Program</h3>
+                    <div class="program-selector">
+                        <select id="program-select" class="program-dropdown">
+                            <option value="">Program seçin...</option>
+                        </select>
+                        <button type="button" class="btn-small btn-add-program" id="btn-add-program">➕</button>
+                        <button type="button" class="btn-small btn-delete-program" id="btn-delete-program">🗑️</button>
+                    </div>
                     <div id="program-list" class="data-list">
-                        <p class="empty-state">Henüz hareket eklenmedi.</p>
+                        <p class="empty-state">Program oluşturun ve hareket ekleyin.</p>
                     </div>
                 </div>
 
@@ -617,12 +624,13 @@
                         </div>
                         <div class="input-group rpe-group">
                             <label for="log-rpe">RPE (Zorluk): <span id="rpe-value" class="rpe-badge">5</span></label>
-                            <input type="range" id="log-rpe" min="1" max="10" value="5" class="rpe-slider">
+                            <input type="range" id="log-rpe" min="1" max="10" value="5" step="0.5" class="rpe-slider">
                             <div class="rpe-labels">
                                 <span>Kolay</span>
                                 <span>Orta</span>
                                 <span>Limit</span>
                             </div>
+                            <p id="rpe-description" class="rpe-description">4-5 tekrar daha yapılabilirdi.</p>
                         </div>
                         <button type="submit" class="btn-primary">💾 Kaydı Kaydet</button>
                     </form>
@@ -679,7 +687,7 @@
     <script src="app.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js').catch(() => { });
+            navigator.serviceWorker.register('./sw.js').catch(() => { });
         }
     </script>
 </body>

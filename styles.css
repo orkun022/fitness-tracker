@@ -1422,3 +1422,73 @@ body::before {
         padding-top: max(20px, calc(var(--safe-area-top) + 12px));
     }
 }
+
+/* === Program Selector === */
+.program-selector {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.program-dropdown {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-sm);
+    padding: 10px 14px;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    outline: none;
+    cursor: pointer;
+}
+
+.btn-add-program, .btn-delete-program {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 1.1rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    border-radius: var(--border-radius-sm);
+    transition: var(--transition);
+}
+
+.btn-add-program:hover {
+    background: rgba(0, 212, 170, 0.15);
+    color: var(--accent);
+    border-color: rgba(0, 212, 170, 0.2);
+}
+
+.btn-delete-program:hover {
+    background: rgba(255, 77, 106, 0.15);
+    color: var(--danger);
+    border-color: rgba(255, 77, 106, 0.2);
+}
+
+.rpe-description {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border-left: 3px solid var(--accent);
+    line-height: 1.4;
+    font-style: italic;
+    min-height: 3.5em;
+    display: flex;
+    align-items: center;
+}
+
+
+.log-rpe-note {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    font-style: italic;
+    opacity: 0.8;
+}

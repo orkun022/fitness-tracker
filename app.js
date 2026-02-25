@@ -86,17 +86,70 @@
         },
 
         clearAll() {
-            ['workouts', 'meals', 'profile', 'food_cache', 'program', 'programLogs'].forEach(k => localStorage.removeItem('fittrack_' + k));
+            ['workouts', 'meals', 'profile', 'food_cache', 'programs', 'programLogs'].forEach(k => localStorage.removeItem('fittrack_' + k));
             localStorage.removeItem('fittrack_gemini_key');
         },
 
-        // Training Program
-        getProgram() { return this._get('program', []); },
-        setProgram(arr) { this._set('program', arr); },
-        addProgramExercise(entry) { const list = this.getProgram(); list.push(entry); this.setProgram(list); },
-        deleteProgramExercise(id) { this.setProgram(this.getProgram().filter(e => e.id !== id)); },
+        // Training Programs
+        getPrograms() {
+            const oldProgram = this._get('program', null);
+            let programs = this._get('programs', null);
 
-        // Program Logs: { id, date, exercise, weight, sets, reps, rpe }
+            if (!programs) {
+                const defaultId = generateId();
+                programs = {
+                    currentId: defaultId,
+                    items: [{ id: defaultId, name: 'Program 1', exercises: oldProgram || [] }]
+                };
+                this.setPrograms(programs);
+                if (oldProgram) localStorage.removeItem('fittrack_program');
+            }
+            return programs;
+        },
+        setPrograms(obj) { this._set('programs', obj); },
+        getCurrentProgram() {
+            const data = this.getPrograms();
+            return data.items.find(p => p.id === data.currentId) || data.items[0];
+        },
+        addProgram(name) {
+            const data = this.getPrograms();
+            const newId = generateId();
+            data.items.push({ id: newId, name: name || `Program ${data.items.length + 1}`, exercises: [] });
+            data.currentId = newId;
+            this.setPrograms(data);
+            return newId;
+        },
+        deleteProgram(id) {
+            const data = this.getPrograms();
+            if (data.items.length <= 1) return;
+            data.items = data.items.filter(p => p.id !== id);
+            if (data.currentId === id) data.currentId = data.items[0].id;
+            this.setPrograms(data);
+        },
+        switchProgram(id) {
+            const data = this.getPrograms();
+            if (data.items.find(p => p.id === id)) {
+                data.currentId = id;
+                this.setPrograms(data);
+            }
+        },
+
+        // Exercise methods (per current program)
+        getProgramExercises() { return this.getCurrentProgram().exercises; },
+        addProgramExercise(entry) {
+            const data = this.getPrograms();
+            const prog = data.items.find(p => p.id === data.currentId);
+            prog.exercises.push(entry);
+            this.setPrograms(data);
+        },
+        deleteProgramExercise(id) {
+            const data = this.getPrograms();
+            const prog = data.items.find(p => p.id === data.currentId);
+            prog.exercises = prog.exercises.filter(e => e.id !== id);
+            this.setPrograms(data);
+        },
+
+        // Program Logs
         getProgramLogs() { return this._get('programLogs', []); },
         setProgramLogs(arr) { this._set('programLogs', arr); },
         addProgramLog(entry) { const list = this.getProgramLogs(); list.push(entry); this.setProgramLogs(list); },
@@ -1150,12 +1203,60 @@
     }
 
     // ========== PROGRAM PAGE ==========
+    const RPE_MEANINGS = {
+        '10': 'Ne daha fazla ağırlık, ne daha fazla tekrar yapılmazdı, maksimum efor.',
+        '9.5': 'Belki 1 tekrar ya da biraz daha ağır yapılabilirdi.',
+        '9': '1 tekrar daha yapılabilirdi. (Tankta 1 kaldı)',
+        '8.5': 'Kesin 1, belki 2 tekrar yapılabilirdi.',
+        '8': '2 tekrar daha yapılabilirdi.',
+        '7.5': 'Kesin 2, belki 3 tekrar yapılabilirdi.',
+        '7': '3 tekrar daha yapılabilirdi.',
+        '6.5': '4-5 tekrar daha yapılabilirdi.',
+        '6': '4-5 tekrar daha yapılabilirdi.',
+        '5.5': '4-5 tekrar daha yapılabilirdi.',
+        '5': '4-5 tekrar daha yapılabilirdi.',
+        '4.5': 'Oldukça basit efor.',
+        '4': 'Oldukça basit efor.',
+        '3.5': 'Oldukça basit efor.',
+        '3': 'Oldukça basit efor.',
+        '2.5': 'Oldukça basit efor.',
+        '2': 'Oldukça basit efor.',
+        '1.5': 'Oldukça basit efor.',
+        '1': 'Oldukça basit efor.'
+    };
+
+    function updateRPEDescription(val) {
+        const desc = $('#rpe-description');
+        if (!desc) return;
+
+        const num = parseFloat(val);
+        let text = RPE_MEANINGS[val];
+
+        if (!text) {
+            // Groupings for potential missing keys
+            if (num <= 4) text = RPE_MEANINGS['4'];
+            else if (num <= 6) text = RPE_MEANINGS['6'];
+            else text = 'Zorluk seviyesi seçin.';
+        }
+        desc.textContent = text;
+    }
+
     function renderProgramPage() {
-        const program = Store.getProgram();
+        const programs = Store.getPrograms();
+        const currentProg = Store.getCurrentProgram();
         const logs = Store.getProgramLogs();
-        renderProgramList(program);
-        renderExerciseSelect(program);
+
+        renderProgramSelector(programs);
+        renderProgramList(currentProg.exercises);
+        renderExerciseSelect(currentProg.exercises);
         renderProgramLogs(logs);
+    }
+
+    function renderProgramSelector(programs) {
+        const select = $('#program-select');
+        select.innerHTML = programs.items.map(p =>
+            `<option value="${p.id}"${p.id === programs.currentId ? ' selected' : ''}>${p.name}</option>`
+        ).join('');
     }
 
     function renderProgramList(program) {
@@ -1190,10 +1291,12 @@
         const sorted = [...logs].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 20);
         container.innerHTML = sorted.map(log => {
             const rpeClass = log.rpe <= 4 ? 'rpe-low' : log.rpe <= 7 ? 'rpe-mid' : 'rpe-high';
+            const rpeDesc = RPE_MEANINGS[log.rpe] || '';
             return `<div class="data-item">
                 <div class="data-item-info">
                     <span class="data-item-primary">${log.exercise}</span>
                     <span class="data-item-secondary">${formatDate(log.date)} · ${log.weight}kg · ${log.sets}×${log.reps} <span class="log-rpe ${rpeClass}">RPE ${log.rpe}</span></span>
+                    ${rpeDesc ? `<p class="log-rpe-note">${rpeDesc}</p>` : ''}
                 </div>
                 <button class="btn-delete" onclick="FitTrack.deleteProgramLog('${log.id}')">🗑️</button>
             </div>`;
@@ -1220,25 +1323,49 @@
         const weight = parseFloat($('#log-weight').value) || 0;
         const sets = parseInt($('#log-sets').value) || 3;
         const reps = parseInt($('#log-reps').value) || 10;
-        const rpe = parseInt($('#log-rpe').value) || 5;
+        const rpe = $('#log-rpe').value;
         if (!exercise) { showToast('Lütfen hareket seçin', true); return; }
         if (weight <= 0) { showToast('Lütfen ağırlık girin', true); return; }
         Store.addProgramLog({ id: generateId(), date: todayStr(), exercise, weight, sets, reps, rpe });
         $('#log-weight').value = '';
         $('#log-rpe').value = '5';
         $('#rpe-value').textContent = '5';
+        updateRPEDescription('5');
         showToast(`${exercise} kaydedildi ✓`);
         renderProgramPage();
     }
 
+    function handleAddProgram(e) {
+        const name = prompt('Program adı girin:');
+        if (name) {
+            Store.addProgram(name);
+            renderProgramPage();
+            showToast(`${name} oluşturuldu ✓`);
+        }
+    }
+
+    function handleDeleteProgram(e) {
+        const programs = Store.getPrograms();
+        if (programs.items.length <= 1) {
+            showToast('Son programı silemezsiniz', true);
+            return;
+        }
+        const current = Store.getCurrentProgram();
+        if (confirm(`"${current.name}" programını silmek istediğinize emin misiniz?`)) {
+            Store.deleteProgram(current.id);
+            renderProgramPage();
+            showToast('Program silindi ✓');
+        }
+    }
+
     // ========== AI RECOMMENDATIONS ==========
     async function generateAIRecommendations() {
-        const program = Store.getProgram();
+        const currentProg = Store.getCurrentProgram();
         const logs = Store.getProgramLogs();
         const container = $('#ai-recommendations');
         const refreshBtn = $('#btn-refresh-recommendations');
 
-        if (program.length === 0 || logs.length === 0) {
+        if (currentProg.exercises.length === 0 || logs.length === 0) {
             container.innerHTML = '<p class="empty-state">Programınıza hareket ekleyin ve antrenman kaydedin.</p>';
             refreshBtn.style.display = 'none';
             return;
@@ -1254,7 +1381,7 @@
         refreshBtn.style.display = 'flex';
 
         // Build exercise data summary
-        const exerciseData = program.map(ex => {
+        const exerciseData = currentProg.exercises.map(ex => {
             const exLogs = logs
                 .filter(l => l.exercise === ex.exercise)
                 .sort((a, b) => b.date.localeCompare(a.date))
@@ -1413,7 +1540,14 @@ Sadece JSON döndür, başka bir şey yazma.`;
             badge.textContent = val;
             badge.style.background = val <= 4 ? 'rgba(0,212,170,0.15)' : val <= 7 ? 'rgba(255,179,71,0.15)' : 'rgba(255,77,106,0.15)';
             badge.style.color = val <= 4 ? '#00d4aa' : val <= 7 ? '#ffb347' : '#ff4d6a';
+            updateRPEDescription(val);
         });
+        $('#program-select').addEventListener('change', (e) => {
+            Store.switchProgram(e.target.value);
+            renderProgramPage();
+        });
+        $('#btn-add-program').addEventListener('click', handleAddProgram);
+        $('#btn-delete-program').addEventListener('click', handleDeleteProgram);
         $('#btn-refresh-recommendations').addEventListener('click', generateAIRecommendations);
 
         // Initial render
