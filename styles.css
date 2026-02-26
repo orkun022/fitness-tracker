@@ -1442,7 +1442,8 @@ body::before {
     cursor: pointer;
 }
 
-.btn-add-program, .btn-delete-program {
+.btn-add-program,
+.btn-delete-program {
     width: 44px;
     height: 44px;
     display: flex;
@@ -1491,4 +1492,126 @@ body::before {
     margin-top: 4px;
     font-style: italic;
     opacity: 0.8;
+}
+
+/* ===  Exercise Autocomplete  === */
+.exercise-autocomplete-wrapper {
+    position: relative;
+}
+
+.exercise-search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.exercise-search-box input {
+    padding-right: 36px;
+    width: 100%;
+}
+
+.exercise-search-icon {
+    position: absolute;
+    right: 12px;
+    font-size: 0.9rem;
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+.exercise-suggestions {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: rgba(14, 18, 45, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 212, 170, 0.25);
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 212, 170, 0.08);
+    z-index: 500;
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 8px 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 212, 170, 0.2) transparent;
+}
+
+.exercise-suggestions::-webkit-scrollbar {
+    width: 4px;
+}
+
+.exercise-suggestions::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.exercise-suggestions::-webkit-scrollbar-thumb {
+    background: rgba(0, 212, 170, 0.2);
+    border-radius: 2px;
+}
+
+.suggestion-search-row {
+    padding: 4px 14px 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 4px;
+}
+
+.suggestion-hint {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 500;
+}
+
+.suggestion-category {
+    padding: 8px 14px 4px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    opacity: 0.75;
+}
+
+.suggestion-item {
+    padding: 9px 14px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    border-radius: 0;
+}
+
+.suggestion-item:hover,
+.suggestion-item.active {
+    background: rgba(0, 212, 170, 0.08);
+    color: var(--text-primary);
+}
+
+.suggestion-item.selected {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.suggestion-empty {
+    padding: 14px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-align: center;
+    font-style: italic;
+}
+
+/* Program exercise highlight in log autocomplete */
+.log-prog-item {
+    color: var(--text-primary) !important;
+    font-weight: 500;
+    border-left: 2px solid rgba(0, 212, 170, 0.4);
+    padding-left: 12px;
+}
+
+.log-prog-item:hover,
+.log-prog-item.active {
+    background: rgba(0, 212, 170, 0.12) !important;
+    border-left-color: var(--accent);
 }

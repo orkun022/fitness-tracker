@@ -5,6 +5,7 @@
 
 (function () {
     'use strict';
+    console.log('FitTrack app.js loading...');
 
     const $ = (sel) => document.querySelector(sel);
     const $$ = (sel) => document.querySelectorAll(sel);
@@ -77,8 +78,10 @@
 
         getPersonalRecords() {
             const prMap = {};
-            this.getWorkouts().forEach(w => {
-                if (!prMap[w.exercise] || w.weight > prMap[w.exercise].weight) {
+            const workouts = this.getWorkouts();
+            if (!Array.isArray(workouts)) return prMap;
+            workouts.forEach(w => {
+                if (w && w.exercise && (!prMap[w.exercise] || w.weight > prMap[w.exercise].weight)) {
                     prMap[w.exercise] = { weight: w.weight, sets: w.sets, reps: w.reps, date: w.date };
                 }
             });
@@ -185,13 +188,13 @@
         { keys: ['tavuk göğsü', 'tavuk gogsu', 'chicken breast'], name: 'Haşlanmış Tavuk Göğsü (200g)', cal: 330, p: 62, c: 0, f: 7, per100g: { cal: 165, p: 31, c: 0, f: 3.6 } },
         { keys: ['tavuk but', 'chicken thigh'], name: 'Tavuk But (150g)', cal: 285, p: 38, c: 0, f: 14, per100g: { cal: 190, p: 25, c: 0, f: 9.5 } },
         { keys: ['tavuk kanat', 'chicken wing'], name: 'Tavuk Kanat (100g)', cal: 203, p: 18, c: 0, f: 14 },
-        { keys: ['köfte', 'kofte', 'meatball'], name: 'Izgara Köfte (4 adet)', cal: 340, p: 28, c: 5, f: 23 },
+        { keys: ['köfte', 'kofte', 'meatball'], name: 'Izgara Köfte (4 tane)', cal: 340, p: 28, c: 5, f: 23 },
         { keys: ['et sote', 'sote', 'beef stew'], name: 'Et Sote (1 porsiyon)', cal: 350, p: 30, c: 10, f: 21 },
         { keys: ['döner', 'doner', 'kebab döner'], name: 'Döner (1 porsiyon)', cal: 450, p: 28, c: 35, f: 22 },
         { keys: ['adana kebap', 'adana'], name: 'Adana Kebap (1 porsiyon)', cal: 400, p: 25, c: 5, f: 32 },
         { keys: ['urfa kebap', 'urfa'], name: 'Urfa Kebap (1 porsiyon)', cal: 380, p: 24, c: 5, f: 30 },
         { keys: ['iskender', 'iskender kebap'], name: 'İskender Kebap', cal: 650, p: 35, c: 40, f: 38 },
-        { keys: ['lahmacun'], name: 'Lahmacun (1 adet)', cal: 210, p: 10, c: 25, f: 8 },
+        { keys: ['lahmacun'], name: 'Lahmacun (1 tane)', cal: 210, p: 10, c: 25, f: 8 },
         { keys: ['pide', 'kaşarlı pide', 'kasarli pide'], name: 'Kaşarlı Pide (1 dilim)', cal: 280, p: 12, c: 30, f: 13 },
         { keys: ['kuşbaşı', 'kusbasi', 'kuşbaşı et'], name: 'Kuşbaşı Et (1 porsiyon)', cal: 300, p: 32, c: 3, f: 18 },
         { keys: ['biftek', 'steak'], name: 'Biftek (200g)', cal: 370, p: 50, c: 0, f: 18 },
@@ -217,9 +220,9 @@
         // --- Sebze Yemekleri ---
         { keys: ['kuru fasulye', 'fasulye', 'white beans'], name: 'Kuru Fasulye (1 porsiyon)', cal: 200, p: 12, c: 30, f: 4 },
         { keys: ['nohut', 'chickpea', 'nohut yemeği'], name: 'Nohut Yemeği (1 porsiyon)', cal: 210, p: 11, c: 32, f: 5 },
-        { keys: ['karnıyarık', 'karniyarik'], name: 'Karnıyarık (2 adet)', cal: 380, p: 15, c: 20, f: 28 },
-        { keys: ['imam bayıldı', 'imam bayildi', 'imambayıldı'], name: 'İmam Bayıldı (2 adet)', cal: 280, p: 5, c: 18, f: 22 },
-        { keys: ['dolma', 'yaprak sarma', 'sarma'], name: 'Yaprak Sarma (6 adet)', cal: 250, p: 6, c: 30, f: 12 },
+        { keys: ['karnıyarık', 'karniyarik'], name: 'Karnıyarık (2 tane)', cal: 380, p: 15, c: 20, f: 28 },
+        { keys: ['imam bayıldı', 'imam bayildi', 'imambayıldı'], name: 'İmam Bayıldı (2 tane)', cal: 280, p: 5, c: 18, f: 22 },
+        { keys: ['dolma', 'yaprak sarma', 'sarma'], name: 'Yaprak Sarma (6 tane)', cal: 250, p: 6, c: 30, f: 12 },
         { keys: ['menemen'], name: 'Menemen (1 porsiyon)', cal: 220, p: 12, c: 10, f: 16 },
         { keys: ['patlıcan musakka', 'musakka'], name: 'Musakka (1 porsiyon)', cal: 320, p: 14, c: 18, f: 22 },
         { keys: ['türlü', 'turlu'], name: 'Türlü (1 porsiyon)', cal: 180, p: 6, c: 20, f: 9 },
@@ -228,24 +231,24 @@
 
         // --- Börek & Hamurişi ---
         { keys: ['börek', 'borek', 'su böreği', 'su boregi'], name: 'Su Böreği (1 dilim)', cal: 300, p: 12, c: 28, f: 16 },
-        { keys: ['sigara böreği', 'sigara boregi'], name: 'Sigara Böreği (3 adet)', cal: 270, p: 10, c: 24, f: 15 },
-        { keys: ['gözleme', 'gozleme'], name: 'Gözleme (1 adet)', cal: 350, p: 12, c: 40, f: 16 },
-        { keys: ['simit'], name: 'Simit (1 adet)', cal: 280, p: 9, c: 48, f: 6 },
-        { keys: ['poğaça', 'pogaca', 'peynirli poğaça'], name: 'Poğaça (1 adet)', cal: 250, p: 6, c: 30, f: 12 },
-        { keys: ['açma', 'acma'], name: 'Açma (1 adet)', cal: 260, p: 5, c: 32, f: 13 },
+        { keys: ['sigara böreği', 'sigara boregi'], name: 'Sigara Böreği (3 tane)', cal: 270, p: 10, c: 24, f: 15 },
+        { keys: ['gözleme', 'gozleme'], name: 'Gözleme (1 tane)', cal: 350, p: 12, c: 40, f: 16 },
+        { keys: ['simit'], name: 'Simit (1 tane)', cal: 280, p: 9, c: 48, f: 6 },
+        { keys: ['poğaça', 'pogaca', 'peynirli poğaça'], name: 'Poğaça (1 tane)', cal: 250, p: 6, c: 30, f: 12 },
+        { keys: ['açma', 'acma'], name: 'Açma (1 tane)', cal: 260, p: 5, c: 32, f: 13 },
         { keys: ['ekmek', 'bread'], name: 'Ekmek (1 dilim)', cal: 75, p: 3, c: 14, f: 1 },
-        { keys: ['pita', 'pide ekmek', 'bazlama'], name: 'Bazlama (1 adet)', cal: 220, p: 6, c: 40, f: 4 },
+        { keys: ['pita', 'pide ekmek', 'bazlama'], name: 'Bazlama (1 tane)', cal: 220, p: 6, c: 40, f: 4 },
         { keys: ['pizza'], name: 'Pizza (1 dilim)', cal: 270, p: 11, c: 30, f: 12 },
         { keys: ['tost', 'toast', 'kaşarlı tost'], name: 'Kaşarlı Tost', cal: 310, p: 14, c: 28, f: 16 },
         { keys: ['hamburger', 'burger'], name: 'Hamburger', cal: 500, p: 25, c: 40, f: 26 },
 
         // --- Kahvaltılık ---
-        { keys: ['yumurta', 'haşlanmış yumurta', 'egg'], name: 'Yumurta (1 adet)', cal: 78, p: 6, c: 1, f: 5 },
+        { keys: ['yumurta', 'haşlanmış yumurta', 'egg'], name: 'Yumurta (1 tane)', cal: 78, p: 6, c: 1, f: 5 },
         { keys: ['omlet', 'omelette'], name: 'Omlet (2 yumurta)', cal: 220, p: 14, c: 2, f: 17 },
-        { keys: ['sahanda yumurta', 'yumurta sahanda'], name: 'Sahanda Yumurta (2 adet)', cal: 240, p: 13, c: 2, f: 20 },
+        { keys: ['sahanda yumurta', 'yumurta sahanda'], name: 'Sahanda Yumurta (2 tane)', cal: 240, p: 13, c: 2, f: 20 },
         { keys: ['peynir', 'beyaz peynir', 'cheese'], name: 'Beyaz Peynir (50g)', cal: 130, p: 9, c: 1, f: 10 },
         { keys: ['kaşar', 'kasar', 'kaşar peynir'], name: 'Kaşar Peyniri (30g)', cal: 110, p: 7, c: 0, f: 9 },
-        { keys: ['zeytin', 'olive'], name: 'Zeytin (10 adet)', cal: 60, p: 0, c: 2, f: 6 },
+        { keys: ['zeytin', 'olive'], name: 'Zeytin (10 tane)', cal: 60, p: 0, c: 2, f: 6 },
         { keys: ['bal', 'honey'], name: 'Bal (1 yemek kaşığı)', cal: 65, p: 0, c: 17, f: 0 },
         { keys: ['tereyağı', 'tereyagi', 'butter'], name: 'Tereyağı (10g)', cal: 72, p: 0, c: 0, f: 8 },
         { keys: ['reçel', 'recel', 'jam'], name: 'Reçel (1 yemek kaşığı)', cal: 50, p: 0, c: 13, f: 0 },
@@ -256,12 +259,12 @@
         { keys: ['sütlaç', 'sutlac', 'rice pudding'], name: 'Sütlaç (1 kase)', cal: 250, p: 7, c: 40, f: 7 },
         { keys: ['kazandibi'], name: 'Kazandibi (1 porsiyon)', cal: 220, p: 6, c: 35, f: 6 },
         { keys: ['revani'], name: 'Revani (1 dilim)', cal: 280, p: 4, c: 45, f: 10 },
-        { keys: ['tulumba'], name: 'Tulumba (5 adet)', cal: 300, p: 3, c: 40, f: 15 },
+        { keys: ['tulumba'], name: 'Tulumba (5 tane)', cal: 300, p: 3, c: 40, f: 15 },
         { keys: ['dondurma', 'ice cream'], name: 'Dondurma (1 top)', cal: 130, p: 2, c: 16, f: 7 },
         { keys: ['çikolata', 'cikolata', 'chocolate'], name: 'Çikolata (30g)', cal: 160, p: 2, c: 17, f: 9 },
         { keys: ['kek', 'cake'], name: 'Kek (1 dilim)', cal: 280, p: 4, c: 38, f: 13 },
-        { keys: ['kurabiye', 'cookie', 'bisküvi', 'biskuvi'], name: 'Kurabiye (3 adet)', cal: 210, p: 3, c: 28, f: 10 },
-        { keys: ['lokum'], name: 'Lokum (3 adet)', cal: 150, p: 1, c: 35, f: 1 },
+        { keys: ['kurabiye', 'cookie', 'bisküvi', 'biskuvi'], name: 'Kurabiye (3 tane)', cal: 210, p: 3, c: 28, f: 10 },
+        { keys: ['lokum'], name: 'Lokum (3 tane)', cal: 150, p: 1, c: 35, f: 1 },
         { keys: ['helva', 'tahin helvası'], name: 'Tahin Helvası (50g)', cal: 260, p: 5, c: 30, f: 14 },
 
         // --- İçecekler ---
@@ -275,9 +278,9 @@
         { keys: ['smoothie'], name: 'Meyve Smoothie (300ml)', cal: 180, p: 4, c: 38, f: 2 },
 
         // --- Meyve ---
-        { keys: ['muz', 'banana'], name: 'Muz (1 adet)', cal: 105, p: 1, c: 27, f: 0 },
-        { keys: ['elma', 'apple'], name: 'Elma (1 adet)', cal: 95, p: 0, c: 25, f: 0 },
-        { keys: ['portakal', 'orange'], name: 'Portakal (1 adet)', cal: 62, p: 1, c: 15, f: 0 },
+        { keys: ['muz', 'banana'], name: 'Muz (1 tane)', cal: 105, p: 1, c: 27, f: 0 },
+        { keys: ['elma', 'apple'], name: 'Elma (1 tane)', cal: 95, p: 0, c: 25, f: 0 },
+        { keys: ['portakal', 'orange'], name: 'Portakal (1 tane)', cal: 62, p: 1, c: 15, f: 0 },
         { keys: ['üzüm', 'uzum', 'grape'], name: 'Üzüm (1 kase)', cal: 100, p: 1, c: 27, f: 0 },
         { keys: ['karpuz', 'watermelon'], name: 'Karpuz (1 dilim)', cal: 85, p: 2, c: 21, f: 0 },
         { keys: ['çilek', 'cilek', 'strawberry'], name: 'Çilek (1 kase)', cal: 50, p: 1, c: 12, f: 0 },
@@ -297,21 +300,21 @@
 
         // --- Fast Food ---
         { keys: ['dürüm', 'durum', 'wrap', 'tavuk dürüm'], name: 'Tavuk Dürüm', cal: 420, p: 22, c: 38, f: 20 },
-        { keys: ['nugget', 'chicken nugget'], name: 'Chicken Nugget (6 adet)', cal: 280, p: 14, c: 18, f: 17 },
+        { keys: ['nugget', 'chicken nugget'], name: 'Chicken Nugget (6 tane)', cal: 280, p: 14, c: 18, f: 17 },
         { keys: ['patates kızartması', 'french fries', 'patates'], name: 'Patates Kızartması (orta)', cal: 340, p: 4, c: 44, f: 17 },
 
         // --- Ek Yemekler ---
         { keys: ['kestane', 'chestnut'], name: 'Kestane (100g)', cal: 213, p: 3, c: 45, f: 2 },
         { keys: ['çılbır', 'cilbir'], name: 'Çılbır (1 porsiyon)', cal: 280, p: 14, c: 5, f: 23 },
         { keys: ['enginar', 'zeytinyağlı enginar'], name: 'Zeytinyağlı Enginar (1 porsiyon)', cal: 180, p: 5, c: 18, f: 10 },
-        { keys: ['midye', 'midye dolma', 'midye tava'], name: 'Midye Dolma (10 adet)', cal: 250, p: 12, c: 28, f: 10 },
+        { keys: ['midye', 'midye dolma', 'midye tava'], name: 'Midye Dolma (10 tane)', cal: 250, p: 12, c: 28, f: 10 },
         { keys: ['kokoreç', 'kokorec'], name: 'Kokoreç (yarım porsiyon)', cal: 350, p: 20, c: 25, f: 18 },
         { keys: ['tantuni'], name: 'Tantuni (1 dürüm)', cal: 380, p: 22, c: 30, f: 18 },
         { keys: ['çiğ köfte', 'cig kofte'], name: 'Çiğ Köfte (1 porsiyon)', cal: 250, p: 8, c: 40, f: 6 },
         { keys: ['hamsili pilav'], name: 'Hamsili Pilav (1 porsiyon)', cal: 320, p: 18, c: 38, f: 10 },
-        { keys: ['içli köfte', 'icli kofte'], name: 'İçli Köfte (3 adet)', cal: 360, p: 15, c: 35, f: 18 },
+        { keys: ['içli köfte', 'icli kofte'], name: 'İçli Köfte (3 tane)', cal: 360, p: 15, c: 35, f: 18 },
         { keys: ['beyti', 'beyti kebap'], name: 'Beyti Kebap (1 porsiyon)', cal: 550, p: 32, c: 30, f: 34 },
-        { keys: ['kuzu pirzola', 'pirzola'], name: 'Kuzu Pirzola (2 adet)', cal: 380, p: 32, c: 0, f: 28 },
+        { keys: ['kuzu pirzola', 'pirzola'], name: 'Kuzu Pirzola (2 tane)', cal: 380, p: 32, c: 0, f: 28 },
         { keys: ['ciğer', 'ciger', 'arnavut ciğeri'], name: 'Arnavut Ciğeri (1 porsiyon)', cal: 300, p: 25, c: 15, f: 16 },
         { keys: ['yoğurt', 'yogurt'], name: 'Yoğurt (1 kase, 200g)', cal: 120, p: 6, c: 8, f: 7 },
         { keys: ['cacık', 'cacik'], name: 'Cacık (1 kase)', cal: 80, p: 4, c: 6, f: 4 },
@@ -333,7 +336,7 @@
     const PORTION_UNITS = {
         porsiyon: '🍽️ Porsiyon',
         gram: '⚖️ Gram (g)',
-        adet: '🔢 Adet',
+        tane: '🍩 Tane',
         dilim: '🍕 Dilim',
         kase: '🥣 Kase',
         bardak: '🥛 Bardak',
@@ -345,11 +348,11 @@
     const FOOD_CATEGORY_UNITS = {
         porsiyon_gram: ['porsiyon', 'gram'],          // et, tavuk, balık, kebap, sebze yemekleri
         tabak_gram: ['tabak', 'porsiyon', 'gram'],    // pilav, makarna, salata
-        adet_gram: ['adet', 'gram'],                  // meyve, kuruyemiş, yumurta, tatlı, börek, ekmek
+        adet_gram: ['tane', 'gram'],                  // meyve, kuruyemiş, yumurta, tatlı, börek, ekmek
         kase_gram: ['kase', 'bardak', 'gram'],        // çorbalar
         bardak_gram: ['bardak', 'gram'],              // içecekler
         kasik_gram: ['kaşık', 'gram'],                // bal, reçel, tereyağı
-        dilim_gram: ['dilim', 'adet', 'gram'],        // pizza, kek, börek
+        dilim_gram: ['dilim', 'tane', 'gram'],        // pizza, kek, börek
         sadece_gram: ['gram'],                        // bilinmeyen yemekler
     };
 
@@ -377,7 +380,7 @@
             'muz', 'banana', 'elma', 'apple', 'portakal', 'orange', 'karpuz', 'watermelon', 'çilek', 'cilek', 'üzüm', 'uzum', 'avokado',
             'ceviz', 'walnut', 'badem', 'almond', 'fındık', 'findik', 'fıstık', 'fistik', 'kestane',
             'yumurta', 'egg',
-            'baklava', 'tulumba', 'kurabiye', 'cookie', 'lokum', 'çikolata', 'cikolata', 'dondurma',
+            'baklava', 'tulumba', 'donut', 'lokma', 'kurabiye', 'cookie', 'lokum', 'çikolata', 'cikolata', 'dondurma',
             'simit', 'poğaça', 'pogaca', 'açma', 'acma', 'bazlama', 'gözleme', 'gozleme', 'lahmacun',
             'hamburger', 'burger', 'tost', 'toast', 'zeytin',
             'cips', 'chips', 'kraker', 'cracker',
@@ -440,8 +443,8 @@
             const q = query.toLowerCase().replace(/[ıİ]/g, 'i').replace(/[şŞ]/g, 's').replace(/[çÇ]/g, 'c')
                 .replace(/[ğĞ]/g, 'g').replace(/[üÜ]/g, 'u').replace(/[öÖ]/g, 'o');
 
-            // Extract quantity multiplier (e.g., "2 porsiyon baklava" → 2)
-            const qtyMatch = q.match(/^(\d+(?:[.,]\d+)?)\s*(porsiyon|adet|dilim|kase|bardak|tabak|gram|gr|g|kg)?\s*/);
+            // Extract quantity multiplier (e.g., "3 tane donut" → 3)
+            const qtyMatch = q.match(/^(\d+(?:[.,]\d+)?)\s*(porsiyon|tane|dilim|kase|bardak|tabak|gram|gr|g|kg)?\s*/);
             let multiplier = 1;
             let searchQuery = q;
             let gramAmount = null;
@@ -757,54 +760,59 @@
     // ========== DASHBOARD ==========
     function renderDashboard() {
         const profile = Store.getProfile();
-        const workouts = Store.getWorkouts();
-        const meals = Store.getMeals();
+        const workouts = Store.getWorkouts() || [];
+        const meals = Store.getMeals() || [];
         const today = todayStr();
 
         // Date
-        $('#current-date').textContent = new Date().toLocaleDateString('tr-TR', {
-            weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-        });
+        const dateEl = $('#current-date');
+        if (dateEl) {
+            dateEl.textContent = new Date().toLocaleDateString('tr-TR', {
+                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+            });
+        }
 
         // Today macros
         const macros = getDayMacros(meals, today);
-        const remaining = Math.max(0, profile.calorieGoal - macros.calories);
+        const remaining = Math.max(0, (profile?.calorieGoal || 2000) - macros.calories);
 
-        $('#dash-calories').textContent = macros.calories.toLocaleString('tr-TR');
-        $('#dash-remaining').textContent = remaining.toLocaleString('tr-TR');
+        if ($('#dash-calories')) $('#dash-calories').textContent = macros.calories.toLocaleString('tr-TR');
+        if ($('#dash-remaining')) $('#dash-remaining').textContent = remaining.toLocaleString('tr-TR');
 
         // Weekly workouts
         const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
         const weekAgoStr = weekAgo.toISOString().slice(0, 10);
         const thisWeekDates = [...new Set(workouts.filter(w => w.date >= weekAgoStr).map(w => w.date))];
-        $('#dash-workouts').textContent = thisWeekDates.length;
-        $('#dash-exercises').textContent = Store.getUsedExercises().length;
+        if ($('#dash-workouts')) $('#dash-workouts').textContent = thisWeekDates.length;
+        if ($('#dash-exercises')) $('#dash-exercises').textContent = Store.getUsedExercises().length;
 
         // Macro summary
-        $('#dash-macro-cal').textContent = macros.calories;
-        $('#dash-macro-protein').textContent = Math.round(macros.protein) + 'g';
-        $('#dash-macro-carbs').textContent = Math.round(macros.carbs) + 'g';
-        $('#dash-macro-fat').textContent = Math.round(macros.fat) + 'g';
+        if ($('#dash-macro-cal')) $('#dash-macro-cal').textContent = macros.calories;
+        if ($('#dash-macro-protein')) $('#dash-macro-protein').textContent = Math.round(macros.protein) + 'g';
+        if ($('#dash-macro-carbs')) $('#dash-macro-carbs').textContent = Math.round(macros.carbs) + 'g';
+        if ($('#dash-macro-fat')) $('#dash-macro-fat').textContent = Math.round(macros.fat) + 'g';
 
-        // Macro bars (rough targets: protein 30%, carbs 50%, fat 20% of calorie goal)
-        const calPercent = Math.min(100, profile.calorieGoal > 0 ? (macros.calories / profile.calorieGoal) * 100 : 0);
-        const proteinTarget = (profile.calorieGoal * 0.30) / 4; // 4 cal per gram
-        const carbsTarget = (profile.calorieGoal * 0.50) / 4;
-        const fatTarget = (profile.calorieGoal * 0.20) / 9; // 9 cal per gram
+        // Macro bars
+        const goal = profile?.calorieGoal || 2000;
+        const calPercent = Math.min(100, goal > 0 ? (macros.calories / goal) * 100 : 0);
+        const proteinTarget = (goal * 0.30) / 4;
+        const carbsTarget = (goal * 0.50) / 4;
+        const fatTarget = (goal * 0.20) / 9;
 
-        $('#dash-macro-cal-bar').style.width = calPercent + '%';
-        $('#dash-macro-protein-bar').style.width = Math.min(100, proteinTarget > 0 ? (macros.protein / proteinTarget) * 100 : 0) + '%';
-        $('#dash-macro-carbs-bar').style.width = Math.min(100, carbsTarget > 0 ? (macros.carbs / carbsTarget) * 100 : 0) + '%';
-        $('#dash-macro-fat-bar').style.width = Math.min(100, fatTarget > 0 ? (macros.fat / fatTarget) * 100 : 0) + '%';
+        if ($('#dash-macro-cal-bar')) $('#dash-macro-cal-bar').style.width = calPercent + '%';
+        if ($('#dash-macro-protein-bar')) $('#dash-macro-protein-bar').style.width = Math.min(100, proteinTarget > 0 ? (macros.protein / proteinTarget) * 100 : 0) + '%';
+        if ($('#dash-macro-carbs-bar')) $('#dash-macro-carbs-bar').style.width = Math.min(100, carbsTarget > 0 ? (macros.carbs / carbsTarget) * 100 : 0) + '%';
+        if ($('#dash-macro-fat-bar')) $('#dash-macro-fat-bar').style.width = Math.min(100, fatTarget > 0 ? (macros.fat / fatTarget) * 100 : 0) + '%';
 
         // Progress ring
-        const percent = calPercent;
         const circumference = 2 * Math.PI * 85;
         const ring = $('#calorie-ring');
-        ring.style.strokeDasharray = circumference;
-        ring.style.strokeDashoffset = circumference - (percent / 100) * circumference;
-        ring.style.stroke = percent > 100 ? '#ff4d6a' : percent > 80 ? '#ffb347' : '#00d4aa';
-        $('#ring-percent').textContent = Math.round(percent) + '%';
+        if (ring) {
+            ring.style.strokeDasharray = circumference;
+            ring.style.strokeDashoffset = circumference - (calPercent / 100) * circumference;
+            ring.style.stroke = calPercent > 100 ? '#ff4d6a' : calPercent > 80 ? '#ffb347' : '#00d4aa';
+        }
+        if ($('#ring-percent')) $('#ring-percent').textContent = Math.round(calPercent) + '%';
 
         renderRecentWorkouts(workouts);
         renderDashCalorieChart(meals, profile);
@@ -928,7 +936,7 @@
 
     function handleAddWorkout(e) {
         e.preventDefault();
-        const exercise = $('#exercise-select').value;
+        const exercise = $('#exercise-input').value.trim();
         const weight = parseFloat($('#workout-weight').value);
         const sets = parseInt($('#workout-sets').value);
         const reps = parseInt($('#workout-reps').value);
@@ -941,10 +949,85 @@
         Store.addWorkout({ id: generateId(), date, exercise, weight, sets, reps });
 
         showToast(isPR ? `🏆 Yeni PR! ${exercise}: ${weight} kg` : `${exercise}: ${weight}kg × ${sets}×${reps} ✓`);
+        $('#exercise-input').value = '';
         $('#workout-weight').value = '';
         $('#workout-sets').value = '';
         $('#workout-reps').value = '';
         renderExercisesPage();
+    }
+
+    // ---- Move (Takip) Exercise Autocomplete ----
+    function initExerciseTakipAutocomplete() {
+        const input = $('#exercise-input');
+        const dropdown = $('#exercise-suggestions');
+        if (!input || !dropdown) return;
+
+        function buildDropdown(filter) {
+            filter = (filter || '').toLowerCase().trim();
+            let html = '';
+
+            for (const [cat, exercises] of Object.entries(EXERCISE_LIBRARY)) {
+                const filtered = filter
+                    ? exercises.filter(ex => ex.toLowerCase().includes(filter))
+                    : exercises;
+                if (filtered.length === 0) continue;
+
+                html += `<div class="suggestion-category">${cat}</div>`;
+                html += filtered.map(ex =>
+                    `<div class="suggestion-item" data-exercise="${ex}">${ex}</div>`
+                ).join('');
+            }
+
+            if (!html) {
+                html = `<div class="suggestion-empty">Hareket bulunamadı. İsmini yazıp ekleyebilirsin.</div>`;
+            }
+
+            dropdown.innerHTML = html;
+
+            dropdown.querySelectorAll('.suggestion-item').forEach(item => {
+                item.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    input.value = item.dataset.exercise;
+                    dropdown.style.display = 'none';
+                    input.focus();
+                });
+            });
+        }
+
+        function open() { buildDropdown(input.value); dropdown.style.display = 'block'; }
+        function close() { dropdown.style.display = 'none'; }
+
+        input.addEventListener('focus', open);
+        input.addEventListener('input', open);
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' || e.key === 'Tab') { close(); return; }
+            if (dropdown.style.display !== 'none') {
+                const items = [...dropdown.querySelectorAll('.suggestion-item')];
+                const current = dropdown.querySelector('.suggestion-item.active');
+                let idx = items.indexOf(current);
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (current) current.classList.remove('active');
+                    idx = Math.min(idx + 1, items.length - 1);
+                    if (items[idx]) { items[idx].classList.add('active'); items[idx].scrollIntoView({ block: 'nearest' }); }
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (current) current.classList.remove('active');
+                    idx = Math.max(idx - 1, 0);
+                    if (items[idx]) { items[idx].classList.add('active'); items[idx].scrollIntoView({ block: 'nearest' }); }
+                } else if (e.key === 'Enter' && current) {
+                    e.preventDefault();
+                    input.value = current.dataset.exercise;
+                    close();
+                }
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!input.contains(e.target) && !dropdown.contains(e.target)) close();
+        });
     }
 
     // ========== CALORIE PAGE ==========
@@ -1202,7 +1285,154 @@
         }
     }
 
+    // ========== EXERCISE LIBRARY & AUTOCOMPLETE ==========
+    const EXERCISE_LIBRARY = {
+        '💪 Göğüs': [
+            'Bench Press', 'Incline Bench Press', 'Decline Bench Press',
+            'Incline Dumbbell Press', 'Dumbbell Fly', 'Cable Crossover',
+            'Cable Fly (Yüksek)', 'Cable Fly (Alçak)', 'Chest Press Machine',
+            'Pec Deck (Butterfly)', 'Push Up', 'Wide Push Up',
+            'Dips (Göğüs)', 'Weighted Dips'
+        ],
+        '🏋️ Sırt': [
+            'Lat Pulldown', 'Wide Grip Pulldown', 'Close Grip Pulldown',
+            'Barbell Row', 'Seated Cable Row', 'Single Arm Dumbbell Row',
+            'T-Bar Row', 'Chest Supported Row', 'Pull Up', 'Chin Up',
+            'Weighted Pull Up', 'Face Pull', 'Deadlift', 'Rack Pull',
+            'Straight Arm Pulldown', 'Low Cable Row'
+        ],
+        '🔵 Omuz': [
+            'Overhead Press (Barbell)', 'Dumbbell Shoulder Press',
+            'Arnold Press', 'Lateral Raise', 'Cable Lateral Raise',
+            'Front Raise', 'Rear Delt Fly', 'Rear Delt Cable Fly',
+            'Face Pull', 'Upright Row', 'Shoulder Press Machine',
+            'Bradford Press', 'Lu Raise'
+        ],
+        '🦵 Bacak': [
+            'Squat', 'Front Squat', 'Hack Squat', 'Leg Press',
+            'Bulgarian Split Squat', 'Romanian Deadlift', 'Leg Extension',
+            'Leg Curl', 'Seated Leg Curl', 'Hip Thrust', 'Glute Bridge',
+            'Walking Lunges', 'Reverse Lunge', 'Step Up',
+            'Calf Raise (Ayakta)', 'Calf Raise (Oturur)', 'Sumo Squat'
+        ],
+        '💪 Biceps': [
+            'Barbell Curl', 'Dumbbell Curl', 'Hammer Curl',
+            'Incline Dumbbell Curl', 'Concentration Curl',
+            'Preacher Curl', 'EZ Bar Curl', 'Cable Curl',
+            'Cross Body Curl', 'Spider Curl', '21s'
+        ],
+        '🔴 Triceps': [
+            'Tricep Pushdown (Düz Bar)', 'Tricep Pushdown (V-Bar)',
+            'Rope Pushdown', 'Skull Crusher', 'Close Grip Bench Press',
+            'Overhead Tricep Extension', 'Dips (Triceps)',
+            'Weighted Dips (Triceps)', 'Kickback', 'Diamond Push Up',
+            'JM Press', 'Single Arm Cable Pushdown'
+        ],
+        '⚡ Karın': [
+            'Crunch', 'Cable Crunch', 'Leg Raise', 'Hanging Leg Raise',
+            'Ab Wheel Rollout', 'Plank', 'Side Plank', 'Russian Twist',
+            'Decline Sit Up', 'Dragon Flag', 'Pallof Press', 'Dead Bug'
+        ],
+        '🟡 Güç / Olimpik': [
+            'Power Clean', 'Hang Clean', 'Push Press', 'Jerk',
+            'Snatch', 'Clean & Jerk', 'Good Morning', 'Kettlebell Swing',
+            'Box Jump', 'Trap Bar Deadlift', 'Farmers Walk', 'Sled Push'
+        ]
+    };
+
+    function initExerciseAutocomplete() {
+        const input = $('#prog-exercise-name');
+        const dropdown = $('#exercise-suggestions');
+        if (!input || !dropdown) return;
+
+        // Build full list (flat)
+        const allExercises = Object.values(EXERCISE_LIBRARY).flat();
+
+        function buildDropdown(filter) {
+            filter = (filter || '').toLowerCase().trim();
+            let html = '';
+
+            for (const [cat, exercises] of Object.entries(EXERCISE_LIBRARY)) {
+                const filtered = filter
+                    ? exercises.filter(ex => ex.toLowerCase().includes(filter))
+                    : exercises;
+                if (filtered.length === 0) continue;
+
+                html += `<div class="suggestion-category">${cat}</div>`;
+                html += filtered.map(ex =>
+                    `<div class="suggestion-item${input.value === ex ? ' selected' : ''}" data-exercise="${ex}">${ex}</div>`
+                ).join('');
+            }
+
+            if (!html) {
+                html = `<div class="suggestion-empty">Hareket bulunamadı. İsmini yazıp ekleyebilirsin.</div>`;
+            }
+
+            dropdown.innerHTML = html;
+
+            // Bind clicks
+            dropdown.querySelectorAll('.suggestion-item').forEach(item => {
+                item.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    input.value = item.dataset.exercise;
+                    closeDropdown();
+                    input.focus();
+                });
+            });
+        }
+
+        function openDropdown() {
+            buildDropdown(input.value);
+            dropdown.style.display = 'block';
+        }
+
+        function closeDropdown() {
+            dropdown.style.display = 'none';
+        }
+
+        // Events
+        input.addEventListener('focus', () => openDropdown());
+
+        input.addEventListener('input', () => {
+            openDropdown();
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { closeDropdown(); return; }
+            if (e.key === 'Tab') { closeDropdown(); return; }
+
+            if (dropdown.style.display !== 'none') {
+                const items = [...dropdown.querySelectorAll('.suggestion-item')];
+                const current = dropdown.querySelector('.suggestion-item.active');
+                let idx = items.indexOf(current);
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (current) current.classList.remove('active');
+                    idx = Math.min(idx + 1, items.length - 1);
+                    if (items[idx]) { items[idx].classList.add('active'); items[idx].scrollIntoView({ block: 'nearest' }); }
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (current) current.classList.remove('active');
+                    idx = Math.max(idx - 1, 0);
+                    if (items[idx]) { items[idx].classList.add('active'); items[idx].scrollIntoView({ block: 'nearest' }); }
+                } else if (e.key === 'Enter' && current) {
+                    e.preventDefault();
+                    input.value = current.dataset.exercise;
+                    closeDropdown();
+                }
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+                closeDropdown();
+            }
+        });
+    }
+
     // ========== PROGRAM PAGE ==========
+
     const RPE_MEANINGS = {
         '10': 'Ne daha fazla ağırlık, ne daha fazla tekrar yapılmazdı, maksimum efor.',
         '9.5': 'Belki 1 tekrar ya da biraz daha ağır yapılabilirdi.',
@@ -1276,10 +1506,16 @@
         `).join('');
     }
 
+    // Stores program exercises for the log autocomplete
+    let _logProgramExercises = [];
+
     function renderExerciseSelect(program) {
-        const select = $('#log-exercise-select');
-        select.innerHTML = '<option value="">Hareket seçin...</option>' +
-            program.map(ex => `<option value="${ex.exercise}">${ex.exercise}</option>`).join('');
+        _logProgramExercises = program.map(ex => ex.exercise);
+        // Refresh autocomplete data if already open
+        const dropdown = $('#log-exercise-suggestions');
+        if (dropdown && dropdown.style.display !== 'none') {
+            _buildLogDropdown($('#log-exercise-input')?.value || '');
+        }
     }
 
     function renderProgramLogs(logs) {
@@ -1319,7 +1555,7 @@
 
     function handleLogProgramWorkout(e) {
         e.preventDefault();
-        const exercise = $('#log-exercise-select').value;
+        const exercise = ($('#log-exercise-input')?.value || '').trim();
         const weight = parseFloat($('#log-weight').value) || 0;
         const sets = parseInt($('#log-sets').value) || 3;
         const reps = parseInt($('#log-reps').value) || 10;
@@ -1327,12 +1563,109 @@
         if (!exercise) { showToast('Lütfen hareket seçin', true); return; }
         if (weight <= 0) { showToast('Lütfen ağırlık girin', true); return; }
         Store.addProgramLog({ id: generateId(), date: todayStr(), exercise, weight, sets, reps, rpe });
+        if ($('#log-exercise-input')) $('#log-exercise-input').value = '';
         $('#log-weight').value = '';
         $('#log-rpe').value = '5';
         $('#rpe-value').textContent = '5';
         updateRPEDescription('5');
         showToast(`${exercise} kaydedildi ✓`);
         renderProgramPage();
+    }
+
+    // ---- Log Exercise Autocomplete ----
+    function _buildLogDropdown(filter) {
+        const input = $('#log-exercise-input');
+        const dropdown = $('#log-exercise-suggestions');
+        if (!input || !dropdown) return;
+
+        filter = (filter || '').toLowerCase().trim();
+        let html = '';
+
+        // 1. Program exercises section (if any)
+        if (_logProgramExercises.length > 0) {
+            const filtered = filter
+                ? _logProgramExercises.filter(ex => ex.toLowerCase().includes(filter))
+                : _logProgramExercises;
+            if (filtered.length > 0) {
+                html += `<div class="suggestion-category">📋 Programımdaki Hareketler</div>`;
+                html += filtered.map(ex =>
+                    `<div class="suggestion-item log-prog-item" data-exercise="${ex}">${ex}</div>`
+                ).join('');
+            }
+        }
+
+        // 2. Full library
+        for (const [cat, exercises] of Object.entries(EXERCISE_LIBRARY)) {
+            const filtered = filter
+                ? exercises.filter(ex => ex.toLowerCase().includes(filter))
+                : exercises;
+            // Skip if already shown in program section
+            const pruned = filtered.filter(ex => !_logProgramExercises.includes(ex));
+            if (pruned.length === 0) continue;
+            html += `<div class="suggestion-category">${cat}</div>`;
+            html += pruned.map(ex =>
+                `<div class="suggestion-item" data-exercise="${ex}">${ex}</div>`
+            ).join('');
+        }
+
+        if (!html) {
+            html = `<div class="suggestion-empty">Hareket bulunamadı. İsmini yazıp kaydedebilirsin.</div>`;
+        }
+
+        dropdown.innerHTML = html;
+
+        dropdown.querySelectorAll('.suggestion-item').forEach(item => {
+            item.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                input.value = item.dataset.exercise;
+                dropdown.style.display = 'none';
+                input.focus();
+            });
+        });
+    }
+
+    function initLogExerciseAutocomplete() {
+        const input = $('#log-exercise-input');
+        const dropdown = $('#log-exercise-suggestions');
+        if (!input || !dropdown) return;
+
+        function open() {
+            _buildLogDropdown(input.value);
+            dropdown.style.display = 'block';
+        }
+        function close() { dropdown.style.display = 'none'; }
+
+        input.addEventListener('focus', open);
+        input.addEventListener('input', open);
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { close(); return; }
+            if (e.key === 'Tab') { close(); return; }
+            if (dropdown.style.display !== 'none') {
+                const items = [...dropdown.querySelectorAll('.suggestion-item')];
+                const current = dropdown.querySelector('.suggestion-item.active');
+                let idx = items.indexOf(current);
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (current) current.classList.remove('active');
+                    idx = Math.min(idx + 1, items.length - 1);
+                    if (items[idx]) { items[idx].classList.add('active'); items[idx].scrollIntoView({ block: 'nearest' }); }
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (current) current.classList.remove('active');
+                    idx = Math.max(idx - 1, 0);
+                    if (items[idx]) { items[idx].classList.add('active'); items[idx].scrollIntoView({ block: 'nearest' }); }
+                } else if (e.key === 'Enter' && current) {
+                    e.preventDefault();
+                    input.value = current.dataset.exercise;
+                    close();
+                }
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!input.contains(e.target) && !dropdown.contains(e.target)) close();
+        });
     }
 
     function handleAddProgram(e) {
@@ -1503,6 +1836,7 @@ Sadece JSON döndür, başka bir şey yazma.`;
 
     // ========== INIT ==========
     function init() {
+        console.log('FitTrack init() starting...');
         initNavigation();
 
         // Forms
@@ -1532,28 +1866,40 @@ Sadece JSON döndür, başka bir şey yazma.`;
         $('#btn-reset').addEventListener('click', handleResetData);
 
         // Program forms
-        $('#program-exercise-form').addEventListener('submit', handleAddProgramExercise);
-        $('#program-log-form').addEventListener('submit', handleLogProgramWorkout);
-        $('#log-rpe').addEventListener('input', (e) => {
-            const val = e.target.value;
-            const badge = $('#rpe-value');
-            badge.textContent = val;
-            badge.style.background = val <= 4 ? 'rgba(0,212,170,0.15)' : val <= 7 ? 'rgba(255,179,71,0.15)' : 'rgba(255,77,106,0.15)';
-            badge.style.color = val <= 4 ? '#00d4aa' : val <= 7 ? '#ffb347' : '#ff4d6a';
-            updateRPEDescription(val);
-        });
-        $('#program-select').addEventListener('change', (e) => {
-            Store.switchProgram(e.target.value);
-            renderProgramPage();
-        });
-        $('#btn-add-program').addEventListener('click', handleAddProgram);
-        $('#btn-delete-program').addEventListener('click', handleDeleteProgram);
-        $('#btn-refresh-recommendations').addEventListener('click', generateAIRecommendations);
+        if ($('#program-exercise-form')) $('#program-exercise-form').addEventListener('submit', handleAddProgramExercise);
+        if ($('#program-log-form')) $('#program-log-form').addEventListener('submit', handleLogProgramWorkout);
+        if ($('#log-rpe')) {
+            $('#log-rpe').addEventListener('input', (e) => {
+                const val = e.target.value;
+                const badge = $('#rpe-value');
+                if (badge) {
+                    badge.textContent = val;
+                    badge.style.background = val <= 4 ? 'rgba(0,212,170,0.15)' : val <= 7 ? 'rgba(255,179,71,0.15)' : 'rgba(255,77,106,0.15)';
+                    badge.style.color = val <= 4 ? '#00d4aa' : val <= 7 ? '#ffb347' : '#ff4d6a';
+                }
+                updateRPEDescription(val);
+            });
+        }
+        if ($('#program-select')) {
+            $('#program-select').addEventListener('change', (e) => {
+                Store.switchProgram(e.target.value);
+                renderProgramPage();
+            });
+        }
+        if ($('#btn-add-program')) $('#btn-add-program').addEventListener('click', handleAddProgram);
+        if ($('#btn-delete-program')) $('#btn-delete-program').addEventListener('click', handleDeleteProgram);
+        if ($('#btn-refresh-recommendations')) $('#btn-refresh-recommendations').addEventListener('click', generateAIRecommendations);
+
+        // Autocomplete for program exercise inputs
+        initExerciseAutocomplete();
+        initLogExerciseAutocomplete();
+        initExerciseTakipAutocomplete();
 
         // Initial render
         renderDashboard();
         generateAIRecommendations();
         if ($('#workout-date')) $('#workout-date').value = todayStr();
+
     }
 
     if (document.readyState === 'loading') {
