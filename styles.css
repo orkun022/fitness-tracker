@@ -1409,12 +1409,58 @@ body::before {
     box-shadow: 0 8px 32px rgba(255, 77, 106, 0.3);
 }
 
-/* === Media Queries === */
-@media (min-width: 480px) {
-    .page-content {
-        max-width: 480px;
-        margin: 0 auto;
-    }
+/* === AI Program Generation === */
+.ai-program-card {
+    border-color: rgba(124, 92, 252, 0.2);
+    background: linear-gradient(135deg, rgba(124, 92, 252, 0.05) 0%, rgba(0, 212, 170, 0.05) 100%);
+    margin-top: 20px;
+}
+
+.generated-program-content h2 {
+    font-size: 1.2rem;
+    color: var(--accent);
+    margin-bottom: 12px;
+}
+
+.generated-program-content h3 {
+    font-size: 1rem;
+    color: var(--text-primary);
+    margin: 16px 0 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ai-workout-day {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--border-radius-sm);
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.ai-workout-day h4 {
+    color: var(--accent-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.ai-exercise-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ai-exercise-item:last-child {
+    border-bottom: none;
+}
+
+.ai-exercise-name {
+    font-weight: 500;
+}
+
+.ai-exercise-sets {
+    color: var(--text-muted);
 }
 
 @supports (padding: max(0px)) {
@@ -1430,7 +1476,8 @@ body::before {
     margin-bottom: 16px;
 }
 
-.program-dropdown {
+.program-dropdown,
+.program-day-dropdown {
     flex: 1;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1440,6 +1487,13 @@ body::before {
     color: var(--text-primary);
     outline: none;
     cursor: pointer;
+    min-width: 0;
+    /* Prevents overflow in flex */
+}
+
+.program-day-dropdown {
+    flex: 0.8;
+    /* Slightly smaller than name dropdown */
 }
 
 .btn-add-program,

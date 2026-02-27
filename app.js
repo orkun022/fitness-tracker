@@ -69,7 +69,10 @@
         setProfile(p) { this._set('profile', p); },
 
         // API Key
-        getApiKey() { return localStorage.getItem('fittrack_gemini_key') || ''; },
+        getApiKey() {
+            const key = localStorage.getItem('fittrack_gemini_key') || '';
+            return key ? key.trim() : '';
+        },
         setApiKey(key) { localStorage.setItem('fittrack_gemini_key', key); },
 
         getUsedExercises() {
@@ -117,10 +120,18 @@
         addProgram(name) {
             const data = this.getPrograms();
             const newId = generateId();
-            data.items.push({ id: newId, name: name || `Program ${data.items.length + 1}`, exercises: [] });
+            data.items.push({ id: newId, name: name || `Program ${data.items.length + 1}`, exercises: [], day: '' });
             data.currentId = newId;
             this.setPrograms(data);
             return newId;
+        },
+        updateProgramDay(id, day) {
+            const data = this.getPrograms();
+            const prog = data.items.find(p => p.id === id);
+            if (prog) {
+                prog.day = day;
+                this.setPrograms(data);
+            }
         },
         deleteProgram(id) {
             const data = this.getPrograms();
@@ -538,12 +549,12 @@
 
             const prompt = `Sen bir beslenme uzmanısın. Kullanıcı şu yemeği sordu: "${foodDescription}". Bu yemeğin yaklaşık besin değerlerini tahmin et. Cevabını JSON formatında ver: {"name": "yemek adı (Türkçe)", "calories": 0, "protein": 0, "carbs": 0, "fat": 0}. Değerler: calories=kcal, protein/carbs/fat=gram.`;
 
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: { temperature: 0.1, maxOutputTokens: 2048, responseMimeType: 'application/json' }
+                    generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
                 })
             });
 
@@ -564,12 +575,12 @@
 
             const prompt = `Bu fotoğraftaki yemeği analiz et. JSON formatında ver: {"name": "yemek adı", "calories": 0, "protein": 0, "carbs": 0, "fat": 0}`;
 
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType, data: base64Image } }] }],
-                    generationConfig: { temperature: 0.1, maxOutputTokens: 2048, responseMimeType: 'application/json' }
+                    generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
                 })
             });
 
@@ -700,6 +711,7 @@
             case 'calories': renderCaloriePage(); break;
             case 'profile': renderProfilePage(); break;
             case 'program': renderProgramPage(); break;
+            case 'ai-program': renderAIProgramPage(); break;
         }
     }
 
@@ -1484,9 +1496,15 @@
 
     function renderProgramSelector(programs) {
         const select = $('#program-select');
+        const daySelect = $('#program-day-select');
+        if (!select || !daySelect) return;
+
         select.innerHTML = programs.items.map(p =>
             `<option value="${p.id}"${p.id === programs.currentId ? ' selected' : ''}>${p.name}</option>`
         ).join('');
+
+        const currentProg = programs.items.find(p => p.id === programs.currentId);
+        daySelect.value = currentProg ? (currentProg.day || '') : '';
     }
 
     function renderProgramList(program) {
@@ -1834,6 +1852,252 @@ Sadece JSON döndür, başka bir şey yazma.`;
         deleteProgramLog(id) { Store.deleteProgramLog(id); showToast('Silindi'); renderProgramPage(); }
     };
 
+    // ========== AI PROGRAM GENERATION ==========
+    let _lastGeneratedProgram = null;
+
+    function renderAIProgramPage() {
+        const profile = Store.getProfile();
+        if ($('#ai-height')) $('#ai-height').value = profile.height || 175;
+        if ($('#ai-weight')) $('#ai-weight').value = profile.bodyWeight || 75;
+
+        // Reset result view
+        $('#ai-program-result').style.display = 'none';
+        $('#ai-program-loading').style.display = 'none';
+    }
+
+    async function handleGenerateAIProgram(e) {
+        e.preventDefault();
+        const apiKey = Store.getApiKey();
+        if (!apiKey) {
+            showToast('Lütfen Profil sayfasından AI API anahtarı girin.', true);
+            navigateTo('profile');
+            return;
+        }
+
+        const data = {
+            height: $('#ai-height').value,
+            weight: $('#ai-weight').value,
+            fat: $('#ai-fat').value,
+            gender: $('#ai-gender').value,
+            days: $('#ai-days').value,
+            goal: $('#ai-goal').value
+        };
+
+        $('#ai-program-loading').style.display = 'flex';
+        $('#ai-program-result').style.display = 'none';
+        $('#ai-program-form').style.opacity = '0.5';
+        $('#ai-program-form').style.pointerEvents = 'none';
+
+        try {
+            const prompt = `Sen bir fitness uzmanısın. Kullanıcı verilerine göre haftalık ${data.days} günlük bir antrenman programı oluştur.
+            Kullanıcı: ${data.gender}, ${data.height}cm, ${data.weight}kg, %${data.fat || 'bilinmiyor'} yağ oranı. Hedef: ${data.goal}.
+            
+            Programı JSON formatında ver. Her gün için gün adı ve o günkü hareketler (hareket adı, set, tekrar) olsun. 
+            Hareket isimleri bilinen spor terimleri olmalı (ör: Bench Press, Squat).
+            
+            JSON formatı:
+            {
+              "programName": "AI - ${data.goal}",
+              "days": [
+                {
+                  "dayName": "1. Gün (Tüm Vücut / veya bölge)",
+                  "exercises": [
+                    {"exercise": "Hareket Adı", "targetSets": 3, "targetReps": 10},
+                    ...
+                  ]
+                },
+                ...
+              ]
+            }
+            Sadece JSON döndür.`;
+
+            let response = null;
+            let lastError = null;
+
+            // Step 1: Try common models first
+            const primaryModels = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash'];
+            const versions = ['v1', 'v1beta'];
+
+            for (const ver of versions) {
+                for (const model of primaryModels) {
+                    const url = `https://generativelanguage.googleapis.com/${ver}/models/${model}:generateContent?key=${apiKey}`;
+                    try {
+                        console.log(`[FitTrack] Trying Primary AI: ${ver}/${model}`);
+                        const res = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                contents: [{ parts: [{ text: prompt }] }],
+                                generationConfig: { temperature: 0.1 }
+                            })
+                        });
+                        if (res.ok) {
+                            response = res;
+                            break;
+                        }
+                        const err = await res.json().catch(() => ({}));
+                        lastError = err?.error?.message || res.statusText;
+                    } catch (e) { lastError = e.message; }
+                }
+                if (response && response.ok) break;
+            }
+
+            // Step 2: If primary failed, try to DISCOVER available models for this specific API key
+            if (!response || !response.ok) {
+                console.warn('[FitTrack] Primary models failed, trying discovery...');
+                try {
+                    const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+                    const listRes = await fetch(listUrl);
+                    if (listRes.ok) {
+                        const listData = await listRes.json();
+                        const availableModels = (listData.models || [])
+                            .filter(m => m.supportedGenerationMethods.includes('generateContent'))
+                            .map(m => m.name);
+
+                        for (const fullModelName of availableModels) {
+                            if (fullModelName.includes('gemini')) {
+                                try {
+                                    console.log(`[FitTrack] Trying Discovered AI: ${fullModelName}`);
+                                    const url = `https://generativelanguage.googleapis.com/v1beta/${fullModelName}:generateContent?key=${apiKey}`;
+                                    const res = await fetch(url, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            contents: [{ parts: [{ text: prompt }] }],
+                                            generationConfig: { temperature: 0.1 }
+                                        })
+                                    });
+                                    if (res.ok) {
+                                        response = res;
+                                        break;
+                                    }
+                                } catch (e) { }
+                            }
+                        }
+                    }
+                } catch (e) { console.error('[FitTrack] Discovery failed:', e); }
+            }
+
+            if (!response || !response.ok) {
+                throw new Error(lastError || 'Uygun AI modeli bulunamadı. Lütfen API anahtarını ve internet bağlantınızı kontrol edin.');
+            }
+            const result = await response.json();
+            let text = result?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            // Strip markdown code blocks if present
+            text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            _lastGeneratedProgram = JSON.parse(text);
+
+            renderGeneratedProgram(_lastGeneratedProgram);
+            $('#ai-program-result').style.display = 'block';
+            window.scrollTo({ top: $('#ai-program-result').offsetTop - 20, behavior: 'smooth' });
+
+        } catch (err) {
+            console.error('AI Program Error:', err);
+            showToast(`Hata: ${err.message || 'Bilinmeyen bir sorun oluştu'}`, true);
+        } finally {
+            $('#ai-program-loading').style.display = 'none';
+            $('#ai-program-form').style.opacity = '1';
+            $('#ai-program-form').style.pointerEvents = 'auto';
+        }
+    }
+
+    function renderGeneratedProgram(program) {
+        const container = $('#generated-program-content');
+        let html = `<h2>${program.programName}</h2>`;
+
+        program.days.forEach(day => {
+            html += `
+                <div class="ai-workout-day">
+                    <h4>${day.dayName}</h4>
+                    <div class="ai-exercises">
+                        ${day.exercises.map(ex => `
+                            <div class="ai-exercise-item">
+                                <span class="ai-exercise-name">${ex.exercise}</span>
+                                <span class="ai-exercise-sets">${ex.targetSets} × ${ex.targetReps}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    }
+
+    function handleSaveAIProgram() {
+        if (!_lastGeneratedProgram) return;
+
+        const programs = Store.getPrograms();
+        const newProgramId = generateId();
+
+        // Flatten exercises for now as current Store structure might not support multi-day sub-structures perfectly
+        // But the user asked to "add to programs", so let's try to fit it into the existing structure.
+        // Existing structure: { id, name, exercises: [{id, exercise, targetSets, targetReps}], day }
+
+        // Option 1: Create a single program with all exercises (not ideal for multi-day)
+        // Option 2: Create multiple programs (one for each day)
+        // Let's go with Option 2 for better organization in the current UI.
+
+        _lastGeneratedProgram.days.forEach((day, index) => {
+            const progId = generateId();
+            const exercises = day.exercises.map(ex => ({
+                id: generateId(),
+                exercise: ex.exercise,
+                targetSets: ex.targetSets,
+                targetReps: ex.targetReps
+            }));
+
+            // Guess the day index (Monday, etc.) if possible, or leave empty
+            // For now, let's just use the sequence
+            const dayIdx = ((index + 1) % 7).toString();
+
+            const data = Store.getPrograms();
+            data.items.push({
+                id: progId,
+                name: `${_lastGeneratedProgram.programName} - ${day.dayName}`,
+                exercises: exercises,
+                day: '' // Optional for now
+            });
+            Store.setPrograms(data);
+        });
+
+        showToast('Programlar kaydedildi ✓');
+        navigateTo('program');
+    }
+
+    // ========== NOTIFICATIONS ==========
+    async function requestNotificationPermission() {
+        if (!('Notification' in window)) return;
+        if (Notification.permission === 'default') {
+            await Notification.requestPermission();
+        }
+    }
+
+    function checkProgramNotifications() {
+        if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+        const data = Store.getPrograms();
+        const todayIdx = new Date().getDay().toString(); // "0" (Pazar) to "6" (Cumartesi)
+
+        // Find programs scheduled for today
+        const todaysPrograms = data.items.filter(p => p.day === todayIdx);
+
+        if (todaysPrograms.length > 0) {
+            // Check if we already notified today (simple session-based check to avoid spamming on every refresh)
+            const sessionKey = 'notified_' + todayStr();
+            if (sessionStorage.getItem(sessionKey)) return;
+
+            todaysPrograms.forEach(prog => {
+                new Notification('FitTrack Hatırlatıcısı', {
+                    body: `Bugün günlerden "${prog.name}"! Antrenmanını unutma. 💪`,
+                    icon: 'data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect fill=\'%230a0e27\' width=\'100\' height=\'100\' rx=\'20\'/><text y=\'68\' x=\'50\' text-anchor=\'middle\' font-size=\'50\'>🏋️</text></svg>'
+                });
+            });
+
+            sessionStorage.setItem(sessionKey, 'true');
+        }
+    }
+
     // ========== INIT ==========
     function init() {
         console.log('FitTrack init() starting...');
@@ -1880,13 +2144,22 @@ Sadece JSON döndür, başka bir şey yazma.`;
                 updateRPEDescription(val);
             });
         }
-        if ($('#program-select')) {
-            $('#program-select').addEventListener('change', (e) => {
-                Store.switchProgram(e.target.value);
-                renderProgramPage();
-            });
-        }
-        if ($('#btn-add-program')) $('#btn-add-program').addEventListener('click', handleAddProgram);
+        // Program Switch
+        $('#program-select')?.addEventListener('change', (e) => {
+            Store.switchProgram(e.target.value);
+            renderProgramPage();
+        });
+
+        // Program Day Switch
+        $('#program-day-select')?.addEventListener('change', (e) => {
+            const currentProg = Store.getCurrentProgram();
+            if (currentProg) {
+                Store.updateProgramDay(currentProg.id, e.target.value);
+                showToast('Program günü güncellendi ✓');
+            }
+        });
+
+        $('#btn-add-program')?.addEventListener('click', handleAddProgram);
         if ($('#btn-delete-program')) $('#btn-delete-program').addEventListener('click', handleDeleteProgram);
         if ($('#btn-refresh-recommendations')) $('#btn-refresh-recommendations').addEventListener('click', generateAIRecommendations);
 
@@ -1895,10 +2168,19 @@ Sadece JSON döndür, başka bir şey yazma.`;
         initLogExerciseAutocomplete();
         initExerciseTakipAutocomplete();
 
+        // AI Program Generation
+        $('#ai-program-form')?.addEventListener('submit', handleGenerateAIProgram);
+        $('#btn-save-ai-program')?.addEventListener('click', handleSaveAIProgram);
+
         // Initial render
         renderDashboard();
         generateAIRecommendations();
         if ($('#workout-date')) $('#workout-date').value = todayStr();
+
+        // Check notifications
+        requestNotificationPermission().then(() => {
+            checkProgramNotifications();
+        });
 
     }
 

@@ -18,7 +18,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=3.0">
 </head>
 
 <body>
@@ -549,6 +549,16 @@
                     <select id="program-select" class="program-dropdown">
                         <option value="">Program seçin...</option>
                     </select>
+                    <select id="program-day-select" class="program-day-dropdown">
+                        <option value="">Gün Seç (Yok)</option>
+                        <option value="1">Pazartesi</option>
+                        <option value="2">Salı</option>
+                        <option value="3">Çarşamba</option>
+                        <option value="4">Perşembe</option>
+                        <option value="5">Cuma</option>
+                        <option value="6">Cumartesi</option>
+                        <option value="0">Pazar</option>
+                    </select>
                     <button type="button" class="btn-small btn-add-program" id="btn-add-program">➕</button>
                     <button type="button" class="btn-small btn-delete-program" id="btn-delete-program">🗑️</button>
                 </div>
@@ -608,6 +618,87 @@
         </div>
     </section>
 
+    <!-- ============ AI PROGRAM GENERATION PAGE ============ -->
+    <section id="page-ai-program" class="page">
+        <header class="page-header">
+            <div class="header-row">
+                <h1>🤖 AI Program Oluşturucu</h1>
+                <button class="hamburger-btn" aria-label="Menü">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
+        </header>
+
+        <div class="page-content">
+            <div class="glass-card">
+                <h3>Bilgilerinizi Girin</h3>
+                <form id="ai-program-form" class="input-form">
+                    <div class="form-row">
+                        <div class="input-group">
+                            <label for="ai-height">Boy (cm)</label>
+                            <input type="number" id="ai-height" placeholder="180" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="ai-weight">Kilo (kg)</label>
+                            <input type="number" id="ai-weight" step="0.1" placeholder="80" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="input-group">
+                            <label for="ai-fat">Yağ Oranı (%)</label>
+                            <input type="number" id="ai-fat" step="0.1" placeholder="15">
+                        </div>
+                        <div class="input-group">
+                            <label for="ai-gender">Cinsiyet</label>
+                            <select id="ai-gender">
+                                <option value="Erkek">Erkek</option>
+                                <option value="Kadın">Kadın</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="input-group">
+                            <label for="ai-days">Haftalık Gün</label>
+                            <input type="number" id="ai-days" min="1" max="7" value="3" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="ai-goal">Hedef</label>
+                            <select id="ai-goal">
+                                <option value="Zayıflamak">Zayıflamak</option>
+                                <option value="Kilo Almak (Hacim)">Kilo Almak (Hacim)</option>
+                                <option value="Atletik Vücut">Atletik Vücut</option>
+                                <option value="Güçlenmek">Güçlenmek</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary btn-ai">
+                        <span class="ai-shimmer"></span>
+                        <span>🤖 Program Oluştur</span>
+                    </button>
+                </form>
+            </div>
+
+            <div id="ai-program-result" class="ai-program-result" style="display:none;">
+                <div class="glass-card ai-program-card">
+                    <div id="generated-program-content" class="generated-program-content">
+                        <!-- AI Generated Content Here -->
+                    </div>
+                    <div class="program-actions" style="margin-top: 20px;">
+                        <button id="btn-save-ai-program" class="btn-primary">
+                            <span>Programlarıma Ekle</span>
+                            <span class="btn-icon">✓</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="ai-program-loading" class="ai-loading" style="display:none; margin: 20px 0;">
+                <div class="ai-spinner"></div>
+                <span>AI programınızı hazırlıyor...</span>
+            </div>
+        </div>
+    </section>
+
     <!-- ============ DRAWER MENU ============ -->
     <div class="drawer-overlay" id="drawer-overlay"></div>
     <nav class="drawer-menu" id="drawer-menu">
@@ -628,6 +719,10 @@
                 <span class="drawer-icon">📋</span>
                 <span>Programım</span>
             </button>
+            <button class="drawer-item" data-page="ai-program">
+                <span class="drawer-icon">🤖</span>
+                <span>AI ile Programım</span>
+            </button>
             <button class="drawer-item" data-page="calories">
                 <span class="drawer-icon">🍽️</span>
                 <span>Kalori Takibi</span>
@@ -646,9 +741,9 @@
     <!-- Toast Notification -->
     <div id="toast" class="toast"></div>
     <div style="position:fixed;bottom:0;right:0;background:red;color:white;padding:5px;z-index:9999;font-size:10px;">
-        V2.1-DEBUG</div>
+        V7.0-ULTRA-AUTO-DISCOVER</div>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=3.0"></script>
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js').catch(() => { });
