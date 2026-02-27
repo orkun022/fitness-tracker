@@ -148,6 +148,86 @@
             }
         },
 
+        async callGemini(prompt, inlineData = null) {
+            const apiKey = this.getApiKey();
+            if (!apiKey) throw new Error('Gemini API anahtarı bulunamadı.');
+
+            let response = null;
+            let lastError = null;
+
+            // Prepare payload
+            const parts = [{ text: prompt }];
+            if (inlineData) parts.push({ inlineData });
+            const body = {
+                contents: [{ parts }],
+                generationConfig: { temperature: 0.1 }
+            };
+
+            // Step 1: Try common models
+            const primaryModels = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash'];
+            const versions = ['v1', 'v1beta'];
+
+            for (const ver of versions) {
+                for (const model of primaryModels) {
+                    const url = `https://generativelanguage.googleapis.com/${ver}/models/${model}:generateContent?key=${apiKey}`;
+                    try {
+                        console.log(`[FitTrack] Trying AI: ${ver}/${model}`);
+                        const tryRes = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(body)
+                        });
+                        if (tryRes.ok) {
+                            response = tryRes;
+                            break;
+                        }
+                        const err = await tryRes.json().catch(() => ({}));
+                        lastError = err?.error?.message || tryRes.statusText;
+                    } catch (e) { lastError = e.message; }
+                }
+                if (response && response.ok) break;
+            }
+
+            // Step 2: Auto-discovery fallback
+            if (!response || !response.ok) {
+                console.warn('[FitTrack] Fallback: Model discovery starting...');
+                try {
+                    const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+                    const listRes = await fetch(listUrl);
+                    if (listRes.ok) {
+                        const listData = await listRes.json();
+                        const availableModels = (listData.models || [])
+                            .filter(m => m.supportedGenerationMethods.includes('generateContent'))
+                            .map(m => m.name);
+
+                        for (const fullModelName of availableModels) {
+                            if (fullModelName.includes('gemini')) {
+                                try {
+                                    console.log(`[FitTrack] Trying Discovered AI: ${fullModelName}`);
+                                    const url = `https://generativelanguage.googleapis.com/v1beta/${fullModelName}:generateContent?key=${apiKey}`;
+                                    const discRes = await fetch(url, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify(body)
+                                    });
+                                    if (discRes.ok) {
+                                        response = discRes;
+                                        break;
+                                    }
+                                } catch (e) { }
+                            }
+                        }
+                    }
+                } catch (e) { console.error('[FitTrack] Discovery failed:', e); }
+            }
+
+            if (!response || !response.ok) {
+                throw new Error(lastError || 'Uygun AI modeli bulunamadı. Lütfen API anahtarını kontrol edin.');
+            }
+
+            return await response.json();
+        },
+
         // Exercise methods (per current program)
         getProgramExercises() { return this.getCurrentProgram().exercises; },
         addProgramExercise(entry) {
@@ -544,54 +624,27 @@
 
         // Gemini API (fallback for unknown foods)
         async estimateWithAI(foodDescription) {
-            const apiKey = Store.getApiKey();
-            if (!apiKey) throw new Error('Bu yemek veritabanında bulunamadı. Gemini API anahtarı eklerseniz AI ile tahmin edilebilir.');
-
             const prompt = `Sen bir beslenme uzmanısın. Kullanıcı şu yemeği sordu: "${foodDescription}". Bu yemeğin yaklaşık besin değerlerini tahmin et. Cevabını JSON formatında ver: {"name": "yemek adı (Türkçe)", "calories": 0, "protein": 0, "carbs": 0, "fat": 0}. Değerler: calories=kcal, protein/carbs/fat=gram.`;
-
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
-                })
-            });
-
-            if (!response.ok) {
-                const err = await response.json().catch(() => ({}));
-                console.error('[FitTrack] API Error:', err);
-                throw new Error(err?.error?.message || `API hatası: ${response.status}`);
+            try {
+                const data = await Store.callGemini(prompt);
+                console.log('[FitTrack] AI Estimate:', JSON.stringify(data));
+                return this._extractResult(data);
+            } catch (err) {
+                console.error('[FitTrack] AI Estimate Error:', err);
+                throw err;
             }
-
-            const data = await response.json();
-            console.log('[FitTrack] API Response:', JSON.stringify(data));
-            return this._extractResult(data);
         },
 
         async estimateFromImage(base64Image, mimeType) {
-            const apiKey = Store.getApiKey();
-            if (!apiKey) throw new Error('Fotoğraf analizi için Gemini API anahtarı gerekli.');
-
             const prompt = `Bu fotoğraftaki yemeği analiz et. JSON formatında ver: {"name": "yemek adı", "calories": 0, "protein": 0, "carbs": 0, "fat": 0}`;
-
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType, data: base64Image } }] }],
-                    generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
-                })
-            });
-
-            if (!response.ok) {
-                const err = await response.json().catch(() => ({}));
-                throw new Error(err?.error?.message || `API hatası: ${response.status}`);
+            try {
+                const data = await Store.callGemini(prompt, { mimeType, data: base64Image });
+                console.log('[FitTrack] Image Analysis:', JSON.stringify(data));
+                return this._extractResult(data);
+            } catch (err) {
+                console.error('[FitTrack] Image Analysis Error:', err);
+                throw err;
             }
-
-            const data = await response.json();
-            console.log('[FitTrack] Image Response:', JSON.stringify(data));
-            return this._extractResult(data);
         },
 
         _extractResult(data) {
@@ -1783,16 +1836,7 @@ JSON formatında cevap ver. Her hareket için:
 ]}
 Sadece JSON döndür, başka bir şey yazma.`;
 
-            const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                }
-            );
-
-            const data = await response.json();
+            const data = await Store.callGemini(prompt);
             const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
             const jsonMatch = text.match(/\{[\s\S]*\}/);
             if (!jsonMatch) throw new Error('AI yanıtı okunamadı');
@@ -1911,77 +1955,7 @@ Sadece JSON döndür, başka bir şey yazma.`;
             }
             Sadece JSON döndür.`;
 
-            let response = null;
-            let lastError = null;
-
-            // Step 1: Try common models first
-            const primaryModels = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash'];
-            const versions = ['v1', 'v1beta'];
-
-            for (const ver of versions) {
-                for (const model of primaryModels) {
-                    const url = `https://generativelanguage.googleapis.com/${ver}/models/${model}:generateContent?key=${apiKey}`;
-                    try {
-                        console.log(`[FitTrack] Trying Primary AI: ${ver}/${model}`);
-                        const res = await fetch(url, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                contents: [{ parts: [{ text: prompt }] }],
-                                generationConfig: { temperature: 0.1 }
-                            })
-                        });
-                        if (res.ok) {
-                            response = res;
-                            break;
-                        }
-                        const err = await res.json().catch(() => ({}));
-                        lastError = err?.error?.message || res.statusText;
-                    } catch (e) { lastError = e.message; }
-                }
-                if (response && response.ok) break;
-            }
-
-            // Step 2: If primary failed, try to DISCOVER available models for this specific API key
-            if (!response || !response.ok) {
-                console.warn('[FitTrack] Primary models failed, trying discovery...');
-                try {
-                    const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
-                    const listRes = await fetch(listUrl);
-                    if (listRes.ok) {
-                        const listData = await listRes.json();
-                        const availableModels = (listData.models || [])
-                            .filter(m => m.supportedGenerationMethods.includes('generateContent'))
-                            .map(m => m.name);
-
-                        for (const fullModelName of availableModels) {
-                            if (fullModelName.includes('gemini')) {
-                                try {
-                                    console.log(`[FitTrack] Trying Discovered AI: ${fullModelName}`);
-                                    const url = `https://generativelanguage.googleapis.com/v1beta/${fullModelName}:generateContent?key=${apiKey}`;
-                                    const res = await fetch(url, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                            contents: [{ parts: [{ text: prompt }] }],
-                                            generationConfig: { temperature: 0.1 }
-                                        })
-                                    });
-                                    if (res.ok) {
-                                        response = res;
-                                        break;
-                                    }
-                                } catch (e) { }
-                            }
-                        }
-                    }
-                } catch (e) { console.error('[FitTrack] Discovery failed:', e); }
-            }
-
-            if (!response || !response.ok) {
-                throw new Error(lastError || 'Uygun AI modeli bulunamadı. Lütfen API anahtarını ve internet bağlantınızı kontrol edin.');
-            }
-            const result = await response.json();
+            const result = await Store.callGemini(prompt);
             let text = result?.candidates?.[0]?.content?.parts?.[0]?.text || '';
             // Strip markdown code blocks if present
             text = text.replace(/```json/g, '').replace(/```/g, '').trim();
